@@ -21,7 +21,7 @@
 })();
 </script>
 <title>2026 Brazilian Presidential Election — Statistical Forensics Report</title>
-<meta name="description" content="A statistical audit of landslide results, digit tests, and Monte Carlo simulations of the 2026 Brazil presidential runoff.">
+<meta name="description" content="A statistical audit of high-concentration results, digit tests, and Monte Carlo simulations of the 2026 Brazil presidential runoff.">
 <style>
 :root {
   --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Noto Serif', serif;
@@ -250,6 +250,41 @@ a { color: var(--accent); }
 .chart-tooltip .tt-label { flex: 1; }
 .chart-tooltip .tt-value { font-family: var(--mono); font-weight: 600; color: var(--text-primary); }
 
+.chart-search { position: relative; max-width: 420px; margin: 0 0 14px; }
+.chart-search-icon {
+  position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+  width: 15px; height: 15px; color: var(--text-muted); pointer-events: none;
+}
+.chart-search-input {
+  width: 100%; box-sizing: border-box; font-family: var(--sans); font-size: 13.5px;
+  padding: 9px 32px 9px 34px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface-1); color: var(--text-primary);
+}
+.chart-search-input:focus { outline: none; border-color: var(--accent); background: var(--surface-card); }
+.chart-search-input::placeholder { color: var(--text-muted); }
+.chart-search-clear {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  width: 22px; height: 22px; border: none; background: transparent; cursor: pointer;
+  color: var(--text-muted); font-size: 16px; line-height: 1; border-radius: 50%;
+}
+.chart-search-clear:hover { color: var(--text-primary); background: var(--border); }
+.chart-search-results {
+  position: absolute; z-index: 50; top: calc(100% + 4px); left: 0; right: 0;
+  margin: 0; padding: 4px; list-style: none;
+  background: var(--surface-card); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.16); max-height: 260px; overflow-y: auto;
+}
+.chart-search-results li {
+  padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;
+  color: var(--text-secondary); display: flex; justify-content: space-between; gap: 10px;
+}
+.chart-search-results li .muni { color: var(--text-primary); font-weight: 550; }
+.chart-search-results li .meta { font-family: var(--mono); color: var(--text-muted); font-size: 11.5px; white-space: nowrap; }
+.chart-search-results li:hover,
+.chart-search-results li[aria-selected="true"] { background: var(--accent-soft); }
+.chart-search-results li.empty { cursor: default; color: var(--text-muted); font-style: italic; }
+.chart-search-results li.empty:hover { background: none; }
+
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
 
@@ -318,8 +353,8 @@ code { font-family: var(--mono); background: var(--surface-1); padding: 1px 5px;
 <header class="masthead">
   <div class="wrap">
     <div class="kicker"><span lang="en" class="i18n-block">Statistical forensics · Brazil 2026 Presidential Election</span><span lang="pt" class="i18n-block">Perícia estatística · Eleição Presidencial do Brasil 2026</span></div>
-    <h1 lang="en" class="i18n-block title">Were round-2 landslide zones a sign of fraud, or just Brazilian political geography?</h1><h1 lang="pt" class="i18n-block title">As zonas com vitórias esmagadoras no 2º turno são sinal de fraude, ou apenas geografia política brasileira?</h1>
-    <p lang="en" class="i18n-block dek">A ground-up statistical audit of the official TSE results for both rounds: zone-by-zone landslide analysis, a chance-model Monte&nbsp;Carlo simulation, digit tests, and a round&#8209;1-vs-round&#8209;2 consistency check across all 6,250 electoral zones.</p><p lang="pt" class="i18n-block dek">Uma auditoria estatística, construída do zero, dos resultados oficiais do TSE nos dois turnos: análise zona a zona das vitórias esmagadoras, uma simulação de Monte&nbsp;Carlo com modelo de acaso, testes de dígitos e uma verificação de consistência entre 1º e 2º turno em todas as 6.250 zonas eleitorais.</p>
+    <h1 lang="en" class="i18n-block title">Were round-2 high-concentration zones a sign of fraud, or of Brazilian political geography?</h1><h1 lang="pt" class="i18n-block title">As zonas de alta concentração de votos no 2º turno são sinal de fraude, ou de geografia política brasileira?</h1>
+    <p lang="en" class="i18n-block dek">A ground-up statistical audit of the official TSE results for both rounds: zone-by-zone concentration analysis, a chance-model Monte&nbsp;Carlo simulation, digit tests, and a round&#8209;1-vs-round&#8209;2 consistency check across all 6,250 electoral zones.</p><p lang="pt" class="i18n-block dek">Uma auditoria estatística, construída do zero, dos resultados oficiais do TSE nos dois turnos: análise zona a zona da concentração de votos, uma simulação de Monte&nbsp;Carlo com modelo de acaso, testes de dígitos e uma verificação de consistência entre 1º e 2º turno em todas as 6.250 zonas eleitorais.</p>
     <div class="meta-row">
       <span lang="en" class="i18n-block">Source: TSE dadosabertos.tse.jus.br — official results only</span><span lang="pt" class="i18n-block">Fonte: TSE dadosabertos.tse.jus.br — apenas resultados oficiais</span>
       <span lang="en" class="i18n-block">Round 1: 2026-10-04 · Round 2: 2026-10-25</span><span lang="pt" class="i18n-block">1º turno: 04/10/2026 · 2º turno: 25/10/2026</span>
@@ -332,7 +367,7 @@ code { font-family: var(--mono); background: var(--surface-1); padding: 1px 5px;
       <a href="#robustness"><span class="n">05</span><span lang="en" class="i18n-block">Does this hold up?</span><span lang="pt" class="i18n-block">Isso se sustenta?</span></a>
       <a href="#consistency"><span class="n">06</span><span lang="en" class="i18n-block">Sudden, or pre-existing?</span><span lang="pt" class="i18n-block">Súbito, ou pré-existente?</span></a>
       <a href="#transfers"><span class="n">07</span><span lang="en" class="i18n-block">Where did the votes go?</span><span lang="pt" class="i18n-block">Para onde foram os votos?</span></a>
-      <a href="#turnout"><span class="n">08</span><span lang="en" class="i18n-block">Turnout &amp; stuffing check</span><span lang="pt" class="i18n-block">Comparecimento e fraude de urna</span></a>
+      <a href="#turnout"><span class="n">08</span><span lang="en" class="i18n-block">Turnout &amp; swing check</span><span lang="pt" class="i18n-block">Comparecimento e variação de votos</span></a>
       <a href="#blanknull"><span class="n">09</span><span lang="en" class="i18n-block">Blank &amp; spoiled votes</span><span lang="pt" class="i18n-block">Votos em branco e nulos</span></a>
       <a href="#digits"><span class="n">10</span><span lang="en" class="i18n-block">Digit tests</span><span lang="pt" class="i18n-block">Testes de dígitos</span></a>
       <a href="#geography"><span class="n">11</span><span lang="en" class="i18n-block">Regional context</span><span lang="pt" class="i18n-block">Contexto regional</span></a>
@@ -345,7 +380,7 @@ code { font-family: var(--mono); background: var(--surface-1); padding: 1px 5px;
 
 <section id="integrity">
   <h2><span class="num">01</span><span lang="en" class="i18n-block">Can we trust the numbers?</span><span lang="pt" class="i18n-block">Podemos confiar nos números?</span></h2>
-  <p lang="en" class="i18n-block lede">Before testing the results for anything unusual, we tested the data itself. Every figure below was recomputed directly from the official TSE files for this report — not copied from an earlier run — so this isn't a claim that the data is clean, it's a demonstration.</p><p lang="pt" class="i18n-block lede">Antes de testar os resultados em busca de algo incomum, testamos os próprios dados. Cada número abaixo foi recalculado diretamente dos arquivos oficiais do TSE especificamente para este relatório — não copiado de uma execução anterior — então isto não é uma alegação de que os dados estão corretos, é uma demonstração.</p>
+  <p lang="en" class="i18n-block lede">Before testing the results for anything unusual, we tested the data itself. Every figure below was recomputed directly from the official TSE files for this report.</p><p lang="pt" class="i18n-block lede">Antes de testar os resultados em busca de algo incomum, testamos os próprios dados. Cada número abaixo foi recalculado diretamente dos arquivos oficiais do TSE especificamente para este relatório.</p>
 
   <ul class="checklist">
     <li lang="en" class="i18n-block"><strong>88,088</strong> candidate-vote records and <strong>12,584</strong> zone-level turnout records examined, across both rounds.</li><li lang="pt" class="i18n-block"><strong>88.088</strong> registros de votos por candidato e <strong>12.584</strong> registros de comparecimento por zona examinados, nos dois turnos.</li>
@@ -362,7 +397,7 @@ code { font-family: var(--mono); background: var(--surface-1); padding: 1px 5px;
 
 <section id="headline">
   <h2><span class="num">02</span><span lang="en" class="i18n-block">The headline result</span><span lang="pt" class="i18n-block">O resultado principal</span></h2>
-  <p lang="en" class="i18n-block lede">Lula (PT) defeated Flávio Bolsonaro (PL) in the round-2 runoff. Round 1 was close — Flávio actually led narrowly — and the <strong>2.80-point swing</strong> to Lula between rounds is well within the range expected when a field of 12 first-round candidates narrows to two.</p><p lang="pt" class="i18n-block lede">Lula (PT) derrotou Flávio Bolsonaro (PL) no segundo turno. O primeiro turno foi disputado — Flávio, na verdade, liderou por pouco — e a <strong>variação de 2,80 pontos</strong> para Lula entre os turnos está dentro do esperado quando um campo de 12 candidatos no primeiro turno se reduz a dois.</p>
+  <p lang="en" class="i18n-block lede">Lula (PT) defeated Flávio Bolsonaro (PL) in the round-2 runoff. Round 1 was close — Flávio actually led narrowly — and Lula's share of the two-candidate vote rose by <strong>2.80 points</strong> between rounds, once the other 10 round-1 candidates were eliminated. A later section (§7) traces where that shift came from, using every eliminated candidate's own round-1 result rather than assuming an explanation.</p><p lang="pt" class="i18n-block lede">Lula (PT) derrotou Flávio Bolsonaro (PL) no segundo turno. O primeiro turno foi disputado — Flávio, na verdade, liderou por pouco — e o percentual de Lula entre os dois candidatos subiu <strong>2,80 pontos</strong> entre os turnos, depois que os outros 10 candidatos do primeiro turno foram eliminados. Uma seção posterior (§7) rastreia de onde veio essa variação, usando o resultado do primeiro turno de cada candidato eliminado, em vez de presumir uma explicação.</p>
 
   <div class="exhibit">
     <div class="chart-row">
@@ -383,12 +418,12 @@ code { font-family: var(--mono); background: var(--surface-1); padding: 1px 5px;
 </section>
 
 <section id="landslides">
-  <h2><span class="num">03</span><span lang="en" class="i18n-block">Are 90%+ landslide zones unusual?</span><span lang="pt" class="i18n-block">As zonas com vitória esmagadora de 90%+ são incomuns?</span></h2>
+  <h2><span class="num">03</span><span lang="en" class="i18n-block">Are 90%+ zones unusual?</span><span lang="pt" class="i18n-block">As zonas com 90%+ são incomuns?</span></h2>
   <p lang="en" class="i18n-block lede">Out of 6,250 electoral zones that reported a presidential vote in round 2, <strong>15 zones (0.24%)</strong> gave Lula 90% + of the two-candidate vote, and <strong>5 zones (0.08%)</strong> gave Flávio Bolsonaro 90% +. Is that a lot?</p><p lang="pt" class="i18n-block lede">Das 6.250 zonas eleitorais que registraram votos para presidente no 2º turno, <strong>15 zonas (0,24%)</strong> deram a Lula 90%+ dos votos entre os dois candidatos, e <strong>5 zonas (0,08%)</strong> deram a Flávio Bolsonaro 90%+. Isso é muito?</p>
 
   <div class="exhibit">
     <div id="chart-zone-hist" class="chart-container" style="min-height:420px"></div>
-    <div lang="en" class="i18n-block cap">Figure 2. The full distribution of round-2 results across every zone. Hover a bar for the exact count. Landslide zones are the small tail beyond the markers — a tiny fraction of a broad, smooth distribution, not a separate spike.</div><div lang="pt" class="i18n-block cap">Figura 2. A distribuição completa dos resultados do 2º turno em todas as zonas. Passe o mouse sobre uma barra para ver a contagem exata. As zonas com vitória esmagadora são a pequena cauda além dos marcadores — uma fração ínfima de uma distribuição ampla e suave, não um pico isolado.</div>
+    <div lang="en" class="i18n-block cap">Figure 2. The full distribution of round-2 results across every zone. Hover a bar for the exact count. High-concentration zones are the small tail beyond the markers — a tiny fraction of a broad, smooth distribution, not a separate spike.</div><div lang="pt" class="i18n-block cap">Figura 2. A distribuição completa dos resultados do 2º turno em todas as zonas. Passe o mouse sobre uma barra para ver a contagem exata. As zonas de alta concentração são a pequena cauda além dos marcadores — uma fração ínfima de uma distribuição ampla e suave, não um pico isolado.</div>
   </div>
 
   <div class="callout method">
@@ -396,11 +431,17 @@ code { font-family: var(--mono); background: var(--surface-1); padding: 1px 5px;
   </div>
 
   <div class="exhibit">
+    <div class="chart-search" id="funnel-search">
+      <svg class="chart-search-icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5.2" fill="none" stroke="currentColor" stroke-width="1.4"/><line x1="11" y1="11" x2="15" y2="15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <input type="text" id="funnel-search-input" class="chart-search-input" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="funnel-search-results" aria-autocomplete="list">
+      <button type="button" id="funnel-search-clear" class="chart-search-clear" hidden>&times;</button>
+      <ul id="funnel-search-results" class="chart-search-results" role="listbox" hidden></ul>
+    </div>
     <div id="chart-funnel" class="chart-container" style="min-height:460px"></div>
-    <div lang="en" class="i18n-block cap">Figure 3. Every zone's round-2 result plotted against its size (log scale). Hover any point for that zone's municipality, vote count and round-1/round-2 shares. Landslide zones (highlighted) span from tiny abroad voting posts to towns of several thousand voters — they are not a uniform small-N artifact. The flat horizontal line marks the national result (51.79%) for reference.</div><div lang="pt" class="i18n-block cap">Figura 3. O resultado do 2º turno de cada zona em função do seu tamanho (escala logarítmica). Passe o mouse sobre qualquer ponto para ver o município, o número de votos e os percentuais no 1º/2º turno dessa zona. As zonas com vitória esmagadora (destacadas) vão de pequenos postos de votação no exterior a cidades com milhares de eleitores — não são um artefato uniforme de amostra pequena. A linha horizontal marca o resultado nacional (51,79%) como referência.</div>
+    <div lang="en" class="i18n-block cap">Figure 3. Every zone's round-2 result plotted against its size (log scale). Use the search box above to jump straight to a specific municipality. Hover any point for that zone's municipality, vote count and round-1/round-2 shares. High-concentration zones (highlighted) span from tiny abroad voting posts to towns of several thousand voters — they are not a uniform small-N artifact. The flat horizontal line marks the national result (51.79%) for reference.</div><div lang="pt" class="i18n-block cap">Figura 3. O resultado do 2º turno de cada zona em função do seu tamanho (escala logarítmica). Use a busca acima para ir direto a um município específico. Passe o mouse sobre qualquer ponto para ver o município, o número de votos e os percentuais no 1º/2º turno dessa zona. As zonas de alta concentração (destacadas) vão de pequenos postos de votação no exterior a cidades com milhares de eleitores — não são um artefato uniforme de amostra pequena. A linha horizontal marca o resultado nacional (51,79%) como referência.</div>
   </div>
 
-  <h3 lang="en" class="i18n-block">The actual landslide zones, largest first</h3><h3 lang="pt" class="i18n-block">As zonas com vitória esmagadora, da maior para a menor</h3>
+  <h3 lang="en" class="i18n-block">The actual 90%+ zones, largest first</h3><h3 lang="pt" class="i18n-block">As zonas de 90%+, da maior para a menor</h3>
   <p lang="en" class="i18n-block">Here are the 15 largest-electorate zones among those that hit 90%+, with their round-1 result alongside for context:</p><p lang="pt" class="i18n-block">Estas são as 15 zonas com maior eleitorado entre as que atingiram 90%+, com o resultado do 1º turno ao lado para contexto:</p>
   <div class="table-scroll">
   <table>
@@ -629,8 +670,8 @@ code { font-family: var(--mono); background: var(--surface-1); padding: 1px 5px;
 </section>
 
 <section id="montecarlo">
-  <h2><span class="num">04</span><span lang="en" class="i18n-block">Could this many landslides happen by chance?</span><span lang="pt" class="i18n-block">Esse número de vitórias esmagadoras poderia acontecer por acaso?</span></h2>
-  <p lang="en" class="i18n-block lede">To answer this properly, we built a null model and ran a Monte Carlo simulation. For every zone, we predict its "expected" round-2 share from its <strong>own round-1 two-candidate result, adjusted by the national average swing</strong> — then simulate 4,000 alternate elections where each zone's actual vote count is drawn randomly (binomial) around that expectation. This tells us how many landslide zones <em>pure chance</em> would produce, given the real distribution of zone sizes.</p><p lang="pt" class="i18n-block lede">Para responder a isso corretamente, construímos um modelo nulo e rodamos uma simulação de Monte Carlo. Para cada zona, prevemos seu percentual "esperado" no 2º turno a partir do <strong>próprio resultado do 1º turno entre os dois candidatos, ajustado pela variação média nacional</strong> — depois simulamos 4.000 eleições alternativas em que o número real de votos de cada zona é sorteado aleatoriamente (binomial) em torno dessa expectativa. Isso mostra quantas zonas com vitória esmagadora o <em>acaso puro</em> produziria, dada a distribuição real dos tamanhos das zonas.</p>
+  <h2><span class="num">04</span><span lang="en" class="i18n-block">Could this many high-concentration results happen by chance?</span><span lang="pt" class="i18n-block">Esse número de resultados de alta concentração poderia acontecer por acaso?</span></h2>
+  <p lang="en" class="i18n-block lede">To answer this properly, we built a null model and ran a Monte Carlo simulation. For every zone, we predict its "expected" round-2 share from its <strong>own round-1 two-candidate result, adjusted by the national average swing</strong> — then simulate 4,000 alternate elections where each zone's actual vote count is drawn randomly (binomial) around that expectation. This tells us how many high-concentration zones <em>pure chance</em> would produce, given the real distribution of zone sizes.</p><p lang="pt" class="i18n-block lede">Para responder a isso corretamente, construímos um modelo nulo e rodamos uma simulação de Monte Carlo. Para cada zona, prevemos seu percentual "esperado" no 2º turno a partir do <strong>próprio resultado do 1º turno entre os dois candidatos, ajustado pela variação média nacional</strong> — depois simulamos 4.000 eleições alternativas em que o número real de votos de cada zona é sorteado aleatoriamente (binomial) em torno dessa expectativa. Isso mostra quantas zonas de alta concentração o <em>acaso puro</em> produziria, dada a distribuição real dos tamanhos das zonas.</p>
 
   <div class="exhibit">
     <div class="chart-row">
@@ -641,15 +682,15 @@ code { font-family: var(--mono); background: var(--surface-1); padding: 1px 5px;
   </div>
 
   <div class="callout ok">
-    <span lang="en" class="i18n-block"><b>Result: the actual Lula landslide count (15 zones) is far <em>below</em> what chance alone predicts</b> (simulated mean 45.0, 90% range 41&ndash;49). If anything, real results are <em>less</em> extreme than a naive chance model would produce — the opposite of what ballot-stuffing would look like. Flávio's landslide count (5 zones) sits at the high end of the chance range (simulated mean 2.9, 90% range 1&ndash;4) but is not an outlier — results this high occur somewhat regularly in this null model given only 5 small-sample events.</span><span lang="pt" class="i18n-block"><b>Resultado: o número real de zonas com vitória esmagadora de Lula (15 zonas) está bem <em>abaixo</em> do que o acaso sozinho prevê</b> (média simulada 45,0, faixa de 90% entre 41 e 49). Se algo, os resultados reais são <em>menos</em> extremos do que um modelo de acaso ingênuo produziria — o oposto do que uma fraude de urna pareceria. O número de zonas com vitória esmagadora de Flávio (5 zonas) fica na extremidade superior da faixa de acaso (média simulada 2,9, faixa de 90% entre 1 e 4), mas não é um valor atípico — resultados tão altos ocorrem com alguma regularidade nesse modelo nulo, já que são apenas 5 eventos de amostra pequena.</span>
+    <span lang="en" class="i18n-block"><b>Result: the actual count of Lula's 90%+ zones (15 zones) is far <em>below</em> what chance alone predicts</b> (simulated mean 45.0, 90% range 41&ndash;49). If anything, real results are <em>less</em> extreme than a naive chance model would produce — the opposite of what ballot-stuffing would look like. Flávio's count of 90%+ zones (5 zones) sits at the high end of the chance range (simulated mean 2.9, 90% range 1&ndash;4) but is not an outlier — results this high occur somewhat regularly in this null model given only 5 small-sample events.</span><span lang="pt" class="i18n-block"><b>Resultado: o número real de zonas de Lula com 90%+ (15 zonas) está bem <em>abaixo</em> do que o acaso sozinho prevê</b> (média simulada 45,0, faixa de 90% entre 41 e 49). Se algo, os resultados reais são <em>menos</em> extremos do que um modelo de acaso ingênuo produziria — o oposto do que uma fraude de urna pareceria. O número de zonas de Flávio com 90%+ (5 zonas) fica na extremidade superior da faixa de acaso (média simulada 2,9, faixa de 90% entre 1 e 4), mas não é um valor atípico — resultados tão altos ocorrem com alguma regularidade nesse modelo nulo, já que são apenas 5 eventos de amostra pequena.</span>
   </div>
 
-  <p lang="en" class="i18n-block">In short: there is no statistical excess of landslide zones for either candidate that would need a fraud explanation. The frequency of 90%+ results is consistent with — if anything, lower than — ordinary sampling variance around each zone's own baseline.</p><p lang="pt" class="i18n-block">Em resumo: não há excesso estatístico de zonas com vitória esmagadora para nenhum dos candidatos que exija uma explicação de fraude. A frequência de resultados de 90%+ é compatível com — e, se algo, inferior a — a variação amostral comum em torno da base de cada zona.</p>
+  <p lang="en" class="i18n-block">In short: there is no statistical excess of 90%+ zones for either candidate that would need a fraud explanation. The frequency of 90%+ results is consistent with — if anything, lower than — ordinary sampling variance around each zone's own baseline.</p><p lang="pt" class="i18n-block">Em resumo: não há excesso estatístico de zonas com 90%+ para nenhum dos candidatos que exija uma explicação de fraude. A frequência de resultados de 90%+ é compatível com — e, se algo, inferior a — a variação amostral comum em torno da base de cada zona.</p>
 </section>
 
 <section id="robustness">
   <h2><span class="num">05</span><span lang="en" class="i18n-block">Does this hold up under scrutiny?</span><span lang="pt" class="i18n-block">Isso se sustenta sob escrutínio?</span></h2>
-  <p lang="en" class="i18n-block lede">A single test, however well designed, can get lucky. So we tried to break the result above five different ways: dropping the zones most likely to be edge cases, and changing what counts as a "landslide" in the first place. If the conclusion only held under the exact original settings, that would be a reason to distrust it.</p><p lang="pt" class="i18n-block lede">Um único teste, por melhor que seja projetado, pode ter sorte. Por isso tentamos "quebrar" o resultado acima de cinco formas diferentes: removendo as zonas mais propensas a serem casos extremos, e mudando o que conta como "vitória esmagadora" em primeiro lugar. Se a conclusão só se sustentasse nas configurações originais exatas, isso seria motivo para desconfiar dela.</p>
+  <p lang="en" class="i18n-block lede">A single test, however well designed, can get lucky. So we tried to break the result above five different ways: dropping the zones most likely to be edge cases, and changing what counts as "high concentration" in the first place. If the conclusion only held under the exact original settings, that would be a reason to distrust it.</p><p lang="pt" class="i18n-block lede">Um único teste, por melhor que seja projetado, pode ter sorte. Por isso tentamos "quebrar" o resultado acima de cinco formas diferentes: removendo as zonas mais propensas a serem casos extremos, e mudando o que conta como "alta concentração" em primeiro lugar. Se a conclusão só se sustentasse nas configurações originais exatas, isso seria motivo para desconfiar dela.</p>
 
   <div class="table-scroll">
   <table class="robustness-table">
@@ -683,14 +724,14 @@ code { font-family: var(--mono); background: var(--surface-1); padding: 1px 5px;
               <td class="num">3</td>
               <td class="num">1.4 (1&ndash;3)</td>
             </tr><tr>
-              <td>Using an 80% landslide threshold instead of 90%</td>
+              <td>Using an 80% concentration threshold instead of 90%</td>
               <td class="num">6,250</td>
               <td class="num">549</td>
               <td class="num">702.5 (694&ndash;711)</td>
               <td class="num">83</td>
               <td class="num">76.8 (72&ndash;82)</td>
             </tr><tr>
-              <td>Using a 95% landslide threshold instead of 90%</td>
+              <td>Using a 95% concentration threshold instead of 90%</td>
               <td class="num">6,250</td>
               <td class="num">2</td>
               <td class="num">4.5 (3&ndash;6)</td>
@@ -736,7 +777,7 @@ code { font-family: var(--mono); background: var(--surface-1); padding: 1px 5px;
   </div>
 
   <div class="callout ok">
-    <span lang="en" class="i18n-block"><b>Lula's actual landslide count stays below the chance range in every single variant</b> — not just the headline 90% test. That's the opposite of what you'd see if the landslides were manufactured.</span><span lang="pt" class="i18n-block"><b>O número real de vitórias esmagadoras de Lula fica abaixo da faixa de acaso em todas as variantes</b> — não apenas no teste principal de 90%. Isso é o oposto do que se veria se as vitórias esmagadoras fossem fabricadas.</span>
+    <span lang="en" class="i18n-block"><b>Lula's actual count of 90%+ zones stays below the chance range in every single variant</b> — not just the headline 90% test. That's the opposite of what you'd see if these results were manufactured.</span><span lang="pt" class="i18n-block"><b>O número real de zonas de Lula com 90%+ fica abaixo da faixa de acaso em todas as variantes</b> — não apenas no teste principal de 90%. Isso é o oposto do que se veria se esses resultados fossem fabricados.</span>
   </div>
   <div class="callout caveat">
     <span lang="en" class="i18n-block"><b>One result worth flagging rather than hiding:</b> at the 80% threshold, Flávio's actual count (83 zones) sits just above the simulated 90% range (72&ndash;82, mean 76.8). On its own this is a mild, one-sided deviation in one of five variants tested, not corrected for running five comparisons — exactly the kind of borderline result that shows up by chance occasionally when you check several thresholds. It is not evidence of anything on its own, but it is the kind of specific, named result that would be worth a second look with finer-grained (polling-section) data.</span><span lang="pt" class="i18n-block"><b>Um resultado que vale sinalizar, não esconder:</b> no limiar de 80%, o número real de Flávio (83 zonas) fica logo acima da faixa simulada de 90% (72&ndash;82, média 76,8). Isoladamente, isso é um desvio leve e unilateral em uma de cinco variantes testadas, sem correção para múltiplas comparações — exatamente o tipo de resultado limítrofe que aparece por acaso ocasionalmente quando se testam vários limiares. Não é evidência de nada por si só, mas é o tipo de resultado específico e nomeado que mereceria um novo olhar com dados mais granulares (por seção eleitoral).</span>
@@ -744,16 +785,22 @@ code { font-family: var(--mono); background: var(--surface-1); padding: 1px 5px;
 </section>
 
 <section id="consistency">
-  <h2><span class="num">06</span><span lang="en" class="i18n-block">Were these landslides sudden, or pre-existing?</span><span lang="pt" class="i18n-block">Essas vitórias esmagadoras foram súbitas, ou já existiam?</span></h2>
-  <p lang="en" class="i18n-block lede">The single most direct way to check whether a landslide zone is "real" is to ask: did this zone already look like a stronghold in round 1, when turnout and ballot design were different and the field included 12 candidates? If round 2 landslides appear out of nowhere in zones that were competitive in round 1, that's a red flag. If they're just round-1 strongholds voting the same way with a different opponent, that's normal.</p><p lang="pt" class="i18n-block lede">A forma mais direta de verificar se uma zona com vitória esmagadora é "real" é perguntar: essa zona já parecia um reduto no 1º turno, quando o comparecimento e o desenho da cédula eram diferentes e o campo incluía 12 candidatos? Se vitórias esmagadoras no 2º turno surgem do nada em zonas que eram disputadas no 1º turno, isso é um sinal de alerta. Se são apenas redutos do 1º turno votando da mesma forma com um adversário diferente, isso é normal.</p>
+  <h2><span class="num">06</span><span lang="en" class="i18n-block">Were these 90%+ results sudden, or pre-existing?</span><span lang="pt" class="i18n-block">Esses resultados de 90%+ foram súbitos, ou já existiam?</span></h2>
+  <p lang="en" class="i18n-block lede">The single most direct way to check whether a 90%+ zone is "real" is to ask: did this zone already look like a stronghold in round 1, when turnout and ballot design were different and the field included 12 candidates? If round-2 high-concentration results appear out of nowhere in zones that were competitive in round 1, that's a red flag. If they're just round-1 strongholds voting the same way with a different opponent, that's normal.</p><p lang="pt" class="i18n-block lede">A forma mais direta de verificar se uma zona de 90%+ é "real" é perguntar: essa zona já parecia um reduto no 1º turno, quando o comparecimento e o desenho da cédula eram diferentes e o campo incluía 12 candidatos? Se resultados de alta concentração no 2º turno surgem do nada em zonas que eram disputadas no 1º turno, isso é um sinal de alerta. Se são apenas redutos do 1º turno votando da mesma forma com um adversário diferente, isso é normal.</p>
 
   <div class="exhibit">
+    <div class="chart-search" id="r1vsr2-search">
+      <svg class="chart-search-icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5.2" fill="none" stroke="currentColor" stroke-width="1.4"/><line x1="11" y1="11" x2="15" y2="15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <input type="text" id="r1vsr2-search-input" class="chart-search-input" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="r1vsr2-search-results" aria-autocomplete="list">
+      <button type="button" id="r1vsr2-search-clear" class="chart-search-clear" hidden>&times;</button>
+      <ul id="r1vsr2-search-results" class="chart-search-results" role="listbox" hidden></ul>
+    </div>
     <div id="chart-r1-vs-r2" class="chart-container" style="min-height:620px;max-width:620px;margin:0 auto"></div>
-    <div lang="en" class="i18n-block cap">Figure 5. Every zone's round-1 two-candidate share (x) against its round-2 share (y). Hover a point for that zone's name and exact swing. The dashed line is y=x — perfect continuity. All 6,250 zones, including every landslide zone, sit almost exactly on it.</div><div lang="pt" class="i18n-block cap">Figura 5. O percentual de Lula entre os dois candidatos no 1º turno (x) de cada zona contra seu percentual no 2º turno (y). Passe o mouse sobre um ponto para ver o nome da zona e a variação exata. A linha tracejada é y=x — continuidade perfeita. Todas as 6.250 zonas, incluindo cada zona com vitória esmagadora, ficam quase exatamente sobre ela.</div>
+    <div lang="en" class="i18n-block cap">Figure 5. Every zone's round-1 two-candidate share (x) against its round-2 share (y). Use the search box above to jump straight to a specific municipality. Hover a point for that zone's name and exact swing. The dashed line is y=x — perfect continuity. All 6,250 zones, including every 90%+ zone, sit almost exactly on it.</div><div lang="pt" class="i18n-block cap">Figura 5. O percentual de Lula entre os dois candidatos no 1º turno (x) de cada zona contra seu percentual no 2º turno (y). Use a busca acima para ir direto a um município específico. Passe o mouse sobre um ponto para ver o nome da zona e a variação exata. A linha tracejada é y=x — continuidade perfeita. Todas as 6.250 zonas, incluindo cada zona de 90%+, ficam quase exatamente sobre ela.</div>
   </div>
 
   <div class="callout ok">
-    <span lang="en" class="i18n-block"><b>Every round-2 landslide zone was already a landslide in round 1.</b> For example, Barreirinha (AM) — the largest Lula landslide zone at 17,338 votes — gave Lula 90.78% of the two-candidate vote in round 1 and 90.90% in round 2: a 0.1-point change, in line with the national swing. This pattern holds across every landslide zone in the table above.</span><span lang="pt" class="i18n-block"><b>Toda zona com vitória esmagadora no 2º turno já era uma vitória esmagadora no 1º turno.</b> Por exemplo, Barreirinha (AM) — a maior zona de vitória esmagadora de Lula, com 17.338 votos — deu a Lula 90,78% dos votos entre os dois candidatos no 1º turno e 90,90% no 2º turno: uma variação de 0,1 pontos, em linha com a variação nacional. Esse padrão se repete em todas as zonas de vitória esmagadora da tabela acima.</span>
+    <span lang="en" class="i18n-block"><b>Every zone that reached 90%+ in round 2 had already reached that level in round 1.</b> For example, Barreirinha (AM) — the largest Lula 90%+ zone, with 17,338 votes, — gave Lula 90.78% of the two-candidate vote in round 1 and 90.90% in round 2: a 0.1-point change, in line with the national swing. This pattern holds across every 90%+ zone in the table above.</span><span lang="pt" class="i18n-block"><b>Toda zona que atingiu 90%+ no 2º turno já havia atingido esse patamar no 1º turno.</b> Por exemplo, Barreirinha (AM) — a maior zona de 90%+ de Lula, com 17.338 votos, — deu a Lula 90,78% dos votos entre os dois candidatos no 1º turno e 90,90% no 2º turno: uma variação de 0,1 pontos, em linha com a variação nacional. Esse padrão se repete em todas as zonas de 90%+ da tabela acima.</span>
   </div>
 </section>
 
@@ -778,8 +825,8 @@ code { font-family: var(--mono); background: var(--surface-1); padding: 1px 5px;
 </section>
 
 <section id="turnout">
-  <h2><span class="num">08</span><span lang="en" class="i18n-block">Turnout changes and the "ballot stuffing" signature</span><span lang="pt" class="i18n-block">Variações no comparecimento e a "assinatura" de fraude de urna</span></h2>
-  <p lang="en" class="i18n-block lede">A classic stuffing signature is incremental turnout between rounds flowing almost entirely to one candidate — i.e. a strong correlation between the change in turnout rate and the swing toward a candidate. We tested this directly across all zones.</p><p lang="pt" class="i18n-block lede">Uma assinatura clássica de fraude de urna é o comparecimento incremental entre os turnos fluindo quase inteiramente para um candidato — ou seja, uma forte correlação entre a variação na taxa de comparecimento e a variação a favor de um candidato. Testamos isso diretamente em todas as zonas.</p>
+  <h2><span class="num">08</span><span lang="en" class="i18n-block">Turnout change vs. vote swing</span><span lang="pt" class="i18n-block">Variação de comparecimento vs. variação de votos</span></h2>
+  <p lang="en" class="i18n-block lede">One pattern sometimes associated with ballot stuffing is incremental turnout between rounds flowing almost entirely to one candidate — i.e. a strong correlation between the change in turnout rate and the swing toward a candidate. We tested this directly across all zones.</p><p lang="pt" class="i18n-block lede">Um padrão às vezes associado a fraude de urna é o comparecimento incremental entre os turnos fluindo quase inteiramente para um candidato — ou seja, uma forte correlação entre a variação na taxa de comparecimento e a variação a favor de um candidato. Testamos isso diretamente em todas as zonas.</p>
 
   <div class="exhibit">
     <div class="chart-row">
@@ -859,9 +906,9 @@ code { font-family: var(--mono); background: var(--surface-1); padding: 1px 5px;
     </tr></thead>
     <tbody>
       <tr><td><span lang="en" class="i18n-block">Data integrity &amp; reconciliation (§1)</span><span lang="pt" class="i18n-block">Integridade e reconciliação dos dados (§1)</span></td><td><span lang="en" class="i18n-block"><span class="pill pill-e">E — No anomaly</span></span><span lang="pt" class="i18n-block"><span class="pill pill-e">E — Sem anomalia</span></span></td><td><span lang="en" class="i18n-block">0 failures across every duplicate, reconciliation and impossible-value check.</span><span lang="pt" class="i18n-block">0 falhas em todas as verificações de duplicidade, reconciliação e valores impossíveis.</span></td></tr>
-      <tr><td><span lang="en" class="i18n-block">Landslide-zone frequency vs. chance model (§4–5)</span><span lang="pt" class="i18n-block">Frequência de zonas com vitória esmagadora vs. modelo de acaso (§4–5)</span></td><td><span lang="en" class="i18n-block"><span class="pill pill-e">E — No anomaly</span></span><span lang="pt" class="i18n-block"><span class="pill pill-e">E — Sem anomalia</span></span></td><td><span lang="en" class="i18n-block">Stable below/within the chance range across 5 robustness variants.</span><span lang="pt" class="i18n-block">Estável abaixo/dentro da faixa de acaso em 5 variantes de robustez.</span></td></tr>
+      <tr><td><span lang="en" class="i18n-block">Frequency of 90%+ zones vs. chance model (§4–5)</span><span lang="pt" class="i18n-block">Frequência de zonas com 90%+ vs. modelo de acaso (§4–5)</span></td><td><span lang="en" class="i18n-block"><span class="pill pill-e">E — No anomaly</span></span><span lang="pt" class="i18n-block"><span class="pill pill-e">E — Sem anomalia</span></span></td><td><span lang="en" class="i18n-block">Stable below/within the chance range across 5 robustness variants.</span><span lang="pt" class="i18n-block">Estável abaixo/dentro da faixa de acaso em 5 variantes de robustez.</span></td></tr>
       <tr><td><span lang="en" class="i18n-block">Flávio's 80%-threshold robustness variant (§5)</span><span lang="pt" class="i18n-block">Variante de robustez de Flávio no limiar de 80% (§5)</span></td><td><span lang="en" class="i18n-block"><span class="pill pill-b">B — Statistical anomaly</span></span><span lang="pt" class="i18n-block"><span class="pill pill-b">B — Anomalia estatística</span></span></td><td><span lang="en" class="i18n-block">Actual count 1 above the simulated 90% range; mild, uncorrected for multiple testing, not reproduced at the 90% or 95% thresholds.</span><span lang="pt" class="i18n-block">Contagem real 1 acima da faixa simulada de 90%; leve, sem correção para múltiplas comparações, não se repete nos limiares de 90% ou 95%.</span></td></tr>
-      <tr><td><span lang="en" class="i18n-block">Round-1-to-round-2 zone consistency (§6)</span><span lang="pt" class="i18n-block">Consistência de zona entre 1º e 2º turno (§6)</span></td><td><span lang="en" class="i18n-block"><span class="pill pill-e">E — No anomaly</span></span><span lang="pt" class="i18n-block"><span class="pill pill-e">E — Sem anomalia</span></span></td><td><span lang="en" class="i18n-block">All zones, including every landslide, sit on the y=x continuity line.</span><span lang="pt" class="i18n-block">Todas as zonas, incluindo cada vitória esmagadora, ficam sobre a linha de continuidade y=x.</span></td></tr>
+      <tr><td><span lang="en" class="i18n-block">Round-1-to-round-2 zone consistency (§6)</span><span lang="pt" class="i18n-block">Consistência de zona entre 1º e 2º turno (§6)</span></td><td><span lang="en" class="i18n-block"><span class="pill pill-e">E — No anomaly</span></span><span lang="pt" class="i18n-block"><span class="pill pill-e">E — Sem anomalia</span></span></td><td><span lang="en" class="i18n-block">All zones, including every 90%+ zone, sit on the y=x continuity line.</span><span lang="pt" class="i18n-block">Todas as zonas, incluindo cada zona de 90%+, ficam sobre a linha de continuidade y=x.</span></td></tr>
       <tr><td><span lang="en" class="i18n-block">Vote-transfer / ecological regression (§7)</span><span lang="pt" class="i18n-block">Transferência de votos / regressão ecológica (§7)</span></td><td><span lang="en" class="i18n-block"><span class="pill pill-e">E — No anomaly</span></span><span lang="pt" class="i18n-block"><span class="pill pill-e">E — Sem anomalia</span></span></td><td><span lang="en" class="i18n-block">Exploratory, not confirmatory — see the method's own caveat; 2 of 6 groups inconclusive.</span><span lang="pt" class="i18n-block">Exploratório, não confirmatório — veja a ressalva do próprio método; 2 dos 6 grupos são inconclusivos.</span></td></tr>
       <tr><td><span lang="en" class="i18n-block">Turnout-change vs. swing correlation (§8)</span><span lang="pt" class="i18n-block">Correlação entre variação de comparecimento e variação de votos (§8)</span></td><td><span lang="en" class="i18n-block"><span class="pill pill-e">E — No anomaly</span></span><span lang="pt" class="i18n-block"><span class="pill pill-e">E — Sem anomalia</span></span></td><td><span lang="en" class="i18n-block">Statistically significant but practically negligible (r² &lt; 1%).</span><span lang="pt" class="i18n-block">Estatisticamente significativa, mas com efeito praticamente desprezível (r² &lt; 1%).</span></td></tr>
       <tr><td><span lang="en" class="i18n-block">Blank/spoiled vote rates (§9)</span><span lang="pt" class="i18n-block">Taxas de votos em branco/nulos (§9)</span></td><td><span lang="en" class="i18n-block"><span class="pill pill-d">Descriptive only</span></span><span lang="pt" class="i18n-block"><span class="pill pill-d">Apenas descritivo</span></span></td><td><span lang="en" class="i18n-block">No formal outlier test run on state-level rates in this pass — see limitations below.</span><span lang="pt" class="i18n-block">Nenhum teste formal de valores atípicos rodado sobre as taxas por estado nesta etapa — veja as limitações abaixo.</span></td></tr>
@@ -878,7 +925,7 @@ code { font-family: var(--mono); background: var(--surface-1); padding: 1px 5px;
     <li lang="en" class="i18n-block"><strong>Polling-station (section) level consistency.</strong> We used municipality-and-zone level data throughout. TSE also publishes <code>votacao_secao_2026_*.zip</code> (results by individual polling section, listed in the same <code>resultados-2026</code> package) — confirmed available but not downloaded here, per the pipeline's original scope. Section-level data would let a future pass check consistency <em>within</em> a zone, at roughly 10&ndash;20x the row count.</li><li lang="pt" class="i18n-block"><strong>Consistência em nível de seção eleitoral.</strong> Usamos dados em nível de município e zona o tempo todo. O TSE também publica <code>votacao_secao_2026_*.zip</code> (resultados por seção eleitoral individual, listado no mesmo pacote <code>resultados-2026</code>) — confirmado disponível, mas não baixado aqui, conforme o escopo original do pipeline. Dados por seção permitiriam, em uma etapa futura, verificar a consistência <em>dentro</em> de uma zona, com cerca de 10 a 20 vezes mais linhas.</li>
     <li lang="en" class="i18n-block"><strong>Chain of custody between a polling station and the published total.</strong> TSE's CKAN catalogue separately lists <code>resultados-2026-boletim-de-urna</code> (individual polling-station result bulletins, "Boletins de Urna", per state) and <code>resultados-2026-arquivos-transmitidos-para-totalizacao</code> (files transmitted for totalization). Both are confirmed to exist; neither was used here. Boletins de Urna are published per-machine, largely as scanned/structured documents rather than simple tabular rows, so matching them against the aggregates used in this report is a meaningfully larger project — but it is the direct next step for anyone wanting to check whether an individual polling station's bulletin matches what reached the national total.</li><li lang="pt" class="i18n-block"><strong>Cadeia de custódia entre uma seção eleitoral e o total publicado.</strong> O catálogo CKAN do TSE lista separadamente <code>resultados-2026-boletim-de-urna</code> (boletins de urna individuais, por estado) e <code>resultados-2026-arquivos-transmitidos-para-totalizacao</code> (arquivos transmitidos para totalização). Ambos confirmadamente existem; nenhum foi usado aqui. Os Boletins de Urna são publicados por máquina, em grande parte como documentos escaneados/estruturados em vez de linhas tabulares simples, então compará-los com os agregados usados neste relatório é um projeto significativamente maior — mas é o próximo passo direto para quem quiser verificar se o boletim de uma seção específica corresponde ao que chegou ao total nacional.</li>
     <li lang="en" class="i18n-block"><strong>True geographic/spatial analysis.</strong> "Regional context" here means state-level aggregation, not municipality-level maps or spatial-autocorrelation statistics (e.g. Moran's I) — those need municipality boundary geometries (e.g. from IBGE) that are not part of this pipeline yet.</li><li lang="pt" class="i18n-block"><strong>Análise geográfica/espacial verdadeira.</strong> "Contexto regional", aqui, significa agregação por estado, não mapas em nível de município nem estatísticas de autocorrelação espacial (ex.: I de Moran) — essas exigiriam geometrias de fronteiras municipais (ex.: do IBGE) que ainda não fazem parte deste pipeline.</li>
-    <li lang="en" class="i18n-block"><strong>Formal outlier testing on blank/null vote rates and on the vote-transfer estimates.</strong> Both are reported descriptively (§7, §9) with caveats, not run through the same chance-model/robustness machinery as the landslide-zone analysis. That would be a natural extension.</li><li lang="pt" class="i18n-block"><strong>Teste formal de valores atípicos nas taxas de votos em branco/nulos e nas estimativas de transferência de votos.</strong> Ambas são reportadas de forma descritiva (§7, §9) com ressalvas, não submetidas ao mesmo mecanismo de modelo de acaso/robustez usado na análise de zonas com vitória esmagadora. Essa seria uma extensão natural.</li>
+    <li lang="en" class="i18n-block"><strong>Formal outlier testing on blank/null vote rates and on the vote-transfer estimates.</strong> Both are reported descriptively (§7, §9) with caveats, not run through the same chance-model/robustness machinery as the 90%+ zone analysis above. That would be a natural extension.</li><li lang="pt" class="i18n-block"><strong>Teste formal de valores atípicos nas taxas de votos em branco/nulos e nas estimativas de transferência de votos.</strong> Ambas são reportadas de forma descritiva (§7, §9) com ressalvas, não submetidas ao mesmo mecanismo de modelo de acaso/robustez usado na análise de zonas com 90%+. Essa seria uma extensão natural.</li>
     <li lang="en" class="i18n-block"><strong>Voter-level behaviour.</strong> Every test here operates on aggregated municipality/zone totals. Individual coercion, vote-buying, or other retail-level irregularities leave no trace in aggregate counts and are outside what any dataset at this level of aggregation could detect.</li><li lang="pt" class="i18n-block"><strong>Comportamento em nível de eleitor individual.</strong> Todo teste aqui opera sobre totais agregados por município/zona. Coação individual, compra de votos ou outras irregularidades no varejo não deixam rastro em contagens agregadas e estão fora do que qualquer conjunto de dados neste nível de agregação poderia detectar.</li>
   </ul>
 
@@ -887,10 +934,10 @@ code { font-family: var(--mono); background: var(--surface-1); padding: 1px 5px;
     <h3 lang="en" class="i18n-block">No statistical signature consistent with fraud was found across any of the twelve analyses in this report.</h3><h3 lang="pt" class="i18n-block">Nenhuma assinatura estatística compatível com fraude foi encontrada em nenhuma das doze análises deste relatório.</h3>
     <ul>
       <li lang="en" class="i18n-block">The underlying data reconciles perfectly: zero duplicate records, zero reconciliation failures, zero impossible values, across every one of the 12,584 zone-round records checked.</li><li lang="pt" class="i18n-block">Os dados subjacentes se reconciliam perfeitamente: zero registros duplicados, zero falhas de reconciliação, zero valores impossíveis, em todos os 12.584 registros de zona-turno verificados.</li>
-      <li lang="en" class="i18n-block">Landslide-zone frequency stays at or below what a chance-only null model predicts, across five independent robustness variants — the opposite of what manufactured results would look like.</li><li lang="pt" class="i18n-block">A frequência de zonas com vitória esmagadora fica igual ou abaixo do que um modelo nulo de puro acaso prevê, em cinco variantes independentes de robustez — o oposto do que resultados fabricados pareceriam.</li>
-      <li lang="en" class="i18n-block">Every landslide zone was already a landslide in round 1, and the estimated vote-transfer pattern from eliminated candidates is consistent with ordinary runoff dynamics.</li><li lang="pt" class="i18n-block">Toda zona com vitória esmagadora já era uma vitória esmagadora no 1º turno, e o padrão estimado de transferência de votos dos candidatos eliminados é consistente com a dinâmica comum de um segundo turno.</li>
+      <li lang="en" class="i18n-block">The frequency of 90%+ zones stays at or below what a chance-only null model predicts, across five independent robustness variants — the opposite of what manufactured results would look like.</li><li lang="pt" class="i18n-block">A frequência de zonas com 90%+ fica igual ou abaixo do que um modelo nulo de puro acaso prevê, em cinco variantes independentes de robustez — o oposto do que resultados fabricados pareceriam.</li>
+      <li lang="en" class="i18n-block">Every zone at 90%+ in round 2 had already reached that level in round 1, and the estimated vote-transfer pattern from eliminated candidates is consistent with ordinary runoff dynamics.</li><li lang="pt" class="i18n-block">Toda zona de 90%+ no 2º turno já havia atingido esse patamar no 1º turno, e o padrão estimado de transferência de votos dos candidatos eliminados é consistente com a dinâmica comum de um segundo turno.</li>
       <li lang="en" class="i18n-block">Turnout changes, blank/null vote rates, vote-count digit distributions and the regional pattern of results all look like ordinary variation, not coordinated manipulation.</li><li lang="pt" class="i18n-block">As variações de comparecimento, as taxas de votos em branco/nulos, as distribuições de dígitos da contagem de votos e o padrão regional dos resultados parecem todos variação comum, não manipulação coordenada.</li>
-      <li lang="en" class="i18n-block">One mild, isolated deviation (Flávio's count at the 80% landslide threshold) is reported rather than hidden — it does not survive being checked at neighbouring thresholds and is the kind of result that appears by chance occasionally when several variants are tested.</li><li lang="pt" class="i18n-block">Um desvio leve e isolado (a contagem de Flávio no limiar de 80% de vitória esmagadora) é reportado em vez de escondido — ele não se repete ao ser verificado em limiares vizinhos e é o tipo de resultado que aparece por acaso ocasionalmente quando várias variantes são testadas.</li>
+      <li lang="en" class="i18n-block">One mild, isolated deviation (Flávio's count at the 80% concentration threshold) is reported rather than hidden — it does not survive being checked at neighbouring thresholds and is the kind of result that appears by chance occasionally when several variants are tested.</li><li lang="pt" class="i18n-block">Um desvio leve e isolado (a contagem de Flávio no limiar de 80% de concentração) é reportado em vez de escondido — ele não se repete ao ser verificado em limiares vizinhos e é o tipo de resultado que aparece por acaso ocasionalmente quando várias variantes são testadas.</li>
     </ul>
     <p lang="en" class="i18n-block" style="margin-bottom:0">None of this constitutes a chain-of-custody or systems audit, and no statistical test can rule out fraud with certainty — it can only say whether the published numbers look like what an honest count, in a country with Brazil's real political geography, would produce. By that standard, they do.</p><p lang="pt" class="i18n-block" style="margin-bottom:0">Nada disso constitui uma auditoria de cadeia de custódia ou de sistemas, e nenhum teste estatístico pode descartar fraude com certeza — ele só pode dizer se os números publicados se parecem com o que uma apuração honesta, em um país com a geografia política real do Brasil, produziria. Por esse padrão, eles se parecem.</p>
   </div>
@@ -1248,6 +1295,35 @@ window.CHART_DATA = JSON.parse(document.getElementById('chart-data-json').textCo
 
     container.textContent = "";
     container.appendChild(svg);
+
+    // Programmatic selection API (used by e.g. a search box): moves the
+    // same highlight ring and tooltip a pointer hover would, but driven by
+    // index instead of mouse position. Returns the point's on-screen
+    // (viewport) coordinates so a caller can scroll it into view first.
+    function selectByIndex(idx) {
+      if (idx < 0 || idx >= screenPts.length) {
+        hi.style.display = "none";
+        hideTooltip();
+        return null;
+      }
+      const pt = screenPts[idx];
+      hi.setAttribute("cx", pt.sx);
+      hi.setAttribute("cy", pt.sy);
+      hi.setAttribute("stroke", points[idx].color);
+      hi.style.display = "block";
+      const svgPt = svg.createSVGPoint();
+      svgPt.x = pt.sx;
+      svgPt.y = pt.sy;
+      const client = svgPt.matrixTransform(g.getScreenCTM());
+      const info = opts.tooltipFn(points[idx]);
+      showTooltip(client.x, client.y, info.title, info.rows);
+      return { x: client.x, y: client.y };
+    }
+    function clearSelection() {
+      hi.style.display = "none";
+      hideTooltip();
+    }
+    return { selectByIndex, clearSelection };
   }
 
   // ===================================================================
@@ -1548,11 +1624,18 @@ window.CHART_DATA = JSON.parse(document.getElementById('chart-data-json').textCo
   const C = window.ReportCharts;
   const D = window.CHART_DATA;
   const [UF, MUN, ZONA, ABROAD, N, P2, P1, DTURN, SWING] = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+  let funnelHandle = null; // set by renderFunnel(); used by the Figure 3 search box
+  let r1vsr2Handle = null; // set by renderR1vsR2(); used by the Figure 5 search box
 
   const I18N = {
     en: {
       locale: "en-GB",
       abroadTag: " (abroad)",
+      search: {
+        placeholder: "Search for a municipality…",
+        noResults: "No municipality matches that search",
+        abroad: "abroad",
+      },
       national: {
         r1Tooltip: "Round 1 share",
         r2Tooltip: "Round 2 share",
@@ -1646,6 +1729,11 @@ window.CHART_DATA = JSON.parse(document.getElementById('chart-data-json').textCo
     pt: {
       locale: "pt-BR",
       abroadTag: " (exterior)",
+      search: {
+        placeholder: "Buscar por município…",
+        noResults: "Nenhum município corresponde a essa busca",
+        abroad: "exterior",
+      },
       national: {
         r1Tooltip: "Percentual no 1º turno",
         r2Tooltip: "Percentual no 2º turno",
@@ -1832,7 +1920,7 @@ window.CHART_DATA = JSON.parse(document.getElementById('chart-data-json').textCo
         meta: z,
       };
     });
-    C.renderScatter("chart-funnel", points, {
+    funnelHandle = C.renderScatter("chart-funnel", points, {
       width: 780,
       height: 460,
       xType: "log",
@@ -1881,7 +1969,7 @@ window.CHART_DATA = JSON.parse(document.getElementById('chart-data-json').textCo
           meta: z,
         };
       });
-    C.renderScatter("chart-r1-vs-r2", points, {
+    r1vsr2Handle = C.renderScatter("chart-r1-vs-r2", points, {
       width: 620,
       height: 620,
       margin: { top: 16, right: 20, bottom: 50, left: 56 },
@@ -2157,6 +2245,144 @@ window.CHART_DATA = JSON.parse(document.getElementById('chart-data-json').textCo
     });
   }
 
+  // ---------------- Chart search boxes (Figure 3, Figure 5) ----------------
+  // Wired once per chart (the input/dropdown/clear-button DOM is static,
+  // server-rendered HTML that survives chart re-renders); only the scatter
+  // handle (reassigned by the render function on every init()) changes
+  // underneath it. `zones` is the exact array the chart built its `points`
+  // from, so array index == the index renderScatter expects.
+  function setupChartSearch({ idPrefix, zones, chartContainerId, getHandle }) {
+    const input = document.getElementById(`${idPrefix}-search-input`);
+    const resultsEl = document.getElementById(`${idPrefix}-search-results`);
+    const clearBtn = document.getElementById(`${idPrefix}-search-clear`);
+    if (!input || !resultsEl || !clearBtn) return;
+
+    function normalize(s) {
+      return s
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "")
+        .toLowerCase();
+    }
+
+    const index = zones.map((z, i) => ({
+      i,
+      norm: normalize(`${z[MUN]} ${z[UF]}`),
+      muni: z[MUN],
+      uf: z[UF],
+      zona: z[ZONA],
+      abroad: z[ABROAD],
+    }));
+
+    let activeIndex = -1;
+    let currentMatches = [];
+
+    function closeDropdown() {
+      resultsEl.hidden = true;
+      resultsEl.textContent = "";
+      input.setAttribute("aria-expanded", "false");
+      activeIndex = -1;
+    }
+
+    function updateActive(items) {
+      items.forEach((li, idx) => li.setAttribute("aria-selected", idx === activeIndex ? "true" : "false"));
+      if (activeIndex >= 0 && items[activeIndex]) items[activeIndex].scrollIntoView({ block: "nearest" });
+    }
+
+    function selectMatch(m) {
+      input.value = `${m.muni} / ${m.uf}`;
+      clearBtn.hidden = false;
+      closeDropdown();
+      const handle = getHandle();
+      if (!handle) return;
+      const pos = handle.selectByIndex(m.i);
+      if (pos) {
+        const el = document.getElementById(chartContainerId);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+
+    function renderResults(matches) {
+      currentMatches = matches;
+      activeIndex = -1;
+      resultsEl.textContent = "";
+      const S = I18N[currentLang()].search;
+      if (matches.length === 0) {
+        const li = document.createElement("li");
+        li.className = "empty";
+        li.textContent = S.noResults;
+        resultsEl.appendChild(li);
+      } else {
+        matches.forEach((m) => {
+          const li = document.createElement("li");
+          li.setAttribute("role", "option");
+          li.setAttribute("aria-selected", "false");
+          const muniSpan = document.createElement("span");
+          muniSpan.className = "muni";
+          muniSpan.textContent = m.muni + (m.abroad ? ` (${S.abroad})` : "");
+          const meta = document.createElement("span");
+          meta.className = "meta";
+          meta.textContent = `${m.uf} · #${m.zona}`;
+          li.appendChild(muniSpan);
+          li.appendChild(meta);
+          li.addEventListener("mousedown", (ev) => {
+            ev.preventDefault(); // fire before the input's blur-triggered close
+            selectMatch(m);
+          });
+          resultsEl.appendChild(li);
+        });
+      }
+      resultsEl.hidden = false;
+      input.setAttribute("aria-expanded", "true");
+    }
+
+    input.addEventListener("input", () => {
+      const q = input.value.trim();
+      clearBtn.hidden = q.length === 0;
+      if (q.length < 2) {
+        closeDropdown();
+        const handle = getHandle();
+        if (handle) handle.clearSelection();
+        return;
+      }
+      const nq = normalize(q);
+      renderResults(index.filter((m) => m.norm.includes(nq)).slice(0, 8));
+    });
+
+    input.addEventListener("keydown", (ev) => {
+      if (resultsEl.hidden) return;
+      const items = Array.from(resultsEl.querySelectorAll('li[role="option"]'));
+      if (ev.key === "ArrowDown") {
+        ev.preventDefault();
+        activeIndex = Math.min(activeIndex + 1, items.length - 1);
+        updateActive(items);
+      } else if (ev.key === "ArrowUp") {
+        ev.preventDefault();
+        activeIndex = Math.max(activeIndex - 1, 0);
+        updateActive(items);
+      } else if (ev.key === "Enter") {
+        if (activeIndex >= 0 && currentMatches[activeIndex]) {
+          ev.preventDefault();
+          selectMatch(currentMatches[activeIndex]);
+        }
+      } else if (ev.key === "Escape") {
+        closeDropdown();
+      }
+    });
+
+    input.addEventListener("blur", () => {
+      setTimeout(closeDropdown, 100); // let a mousedown selection register first
+    });
+
+    clearBtn.addEventListener("click", () => {
+      input.value = "";
+      clearBtn.hidden = true;
+      closeDropdown();
+      const handle = getHandle();
+      if (handle) handle.clearSelection();
+      input.focus();
+    });
+  }
+
   function init() {
     const lang = currentLang();
     const S = I18N[lang];
@@ -2172,12 +2398,44 @@ window.CHART_DATA = JSON.parse(document.getElementById('chart-data-json').textCo
     renderStateTurnout(S, locale);
     renderVoteTransfer(S, locale);
     renderBlankNull(S, locale);
+
+    // The charts underneath the search boxes were just torn down and
+    // rebuilt (new highlight circle, new handle), so any previous
+    // selection no longer points at anything real -- reset the search
+    // UI to match.
+    ["funnel", "r1vsr2"].forEach((idPrefix) => {
+      const searchInput = document.getElementById(`${idPrefix}-search-input`);
+      const searchClear = document.getElementById(`${idPrefix}-search-clear`);
+      if (searchInput) {
+        searchInput.placeholder = S.search.placeholder;
+        searchInput.setAttribute("aria-label", S.search.placeholder);
+        searchInput.value = "";
+      }
+      if (searchClear) searchClear.hidden = true;
+      const searchResults = document.getElementById(`${idPrefix}-search-results`);
+      if (searchResults) {
+        searchResults.hidden = true;
+        searchResults.textContent = "";
+      }
+    });
   }
 
   window.ReportApp = { init, currentLang };
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
+  setupChartSearch({
+    idPrefix: "funnel",
+    zones: D.zones,
+    chartContainerId: "chart-funnel",
+    getHandle: () => funnelHandle,
+  });
+  setupChartSearch({
+    idPrefix: "r1vsr2",
+    zones: D.zones.filter((z) => z[P1] !== null),
+    chartContainerId: "chart-r1-vs-r2",
+    getHandle: () => r1vsr2Handle,
+  });
 
   // Re-render with new colors/text when the viewer toggles light/dark theme
   // or switches language (both are attributes on <html>).
@@ -2200,7 +2458,7 @@ window.CHART_DATA = JSON.parse(document.getElementById('chart-data-json').textCo
 <script>
 (function(){
   var TITLES = {en: "2026 Brazilian Presidential Election \u2014 Statistical Forensics Report", pt: "Elei\u00e7\u00e3o Presidencial do Brasil em 2026 \u2014 Relat\u00f3rio de Per\u00edcia Estat\u00edstica"};
-  var DESCS = {en: "A statistical audit of landslide results, digit tests, and Monte Carlo simulations of the 2026 Brazil presidential runoff.", pt: "Uma auditoria estat\u00edstica dos resultados esmagadores, testes de d\u00edgitos e simula\u00e7\u00f5es de Monte Carlo do segundo turno da elei\u00e7\u00e3o presidencial de 2026 no Brasil."};
+  var DESCS = {en: "A statistical audit of high-concentration results, digit tests, and Monte Carlo simulations of the 2026 Brazil presidential runoff.", pt: "Uma auditoria estat\u00edstica dos resultados de alta concentra\u00e7\u00e3o, testes de d\u00edgitos e simula\u00e7\u00f5es de Monte Carlo do segundo turno da elei\u00e7\u00e3o presidencial de 2026 no Brasil."};
 
   function applyLang(lang){
     document.documentElement.setAttribute('data-lang', lang);
