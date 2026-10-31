@@ -115,6 +115,20 @@ three more scripts, run from `scripts/` in order:
 Monte Carlo simulation draws, static figures) is regenerated output and
 is gitignored, same as `data/raw/` and `data/processed/`.
 
+## Deployment
+
+The report is a single self-contained HTML file, so it deploys as a static
+site with no build tooling. On Render (Static Site), configure:
+
+- **Branch**: `main`
+- **Root Directory**: *(leave blank)*
+- **Build Command**: *(leave blank — nothing to build)*
+- **Publish Directory**: `report`
+
+`report/index.html` is a small redirect to `2026_election_forensics_report.html`
+so the bare domain resolves to the report. Any static host (Netlify, GitHub
+Pages, S3, etc.) works the same way — point it at the `report/` directory.
+
 ## Notes
 
 - `data/raw/*.zip` are the unmodified files as downloaded from
