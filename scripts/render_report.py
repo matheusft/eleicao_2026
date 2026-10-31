@@ -393,6 +393,41 @@ a {{ color: var(--accent); }}
 .chart-tooltip .tt-label {{ flex: 1; }}
 .chart-tooltip .tt-value {{ font-family: var(--mono); font-weight: 600; color: var(--text-primary); }}
 
+.chart-search {{ position: relative; max-width: 420px; margin: 0 0 14px; }}
+.chart-search-icon {{
+  position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+  width: 15px; height: 15px; color: var(--text-muted); pointer-events: none;
+}}
+.chart-search-input {{
+  width: 100%; box-sizing: border-box; font-family: var(--sans); font-size: 13.5px;
+  padding: 9px 32px 9px 34px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface-1); color: var(--text-primary);
+}}
+.chart-search-input:focus {{ outline: none; border-color: var(--accent); background: var(--surface-card); }}
+.chart-search-input::placeholder {{ color: var(--text-muted); }}
+.chart-search-clear {{
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  width: 22px; height: 22px; border: none; background: transparent; cursor: pointer;
+  color: var(--text-muted); font-size: 16px; line-height: 1; border-radius: 50%;
+}}
+.chart-search-clear:hover {{ color: var(--text-primary); background: var(--border); }}
+.chart-search-results {{
+  position: absolute; z-index: 50; top: calc(100% + 4px); left: 0; right: 0;
+  margin: 0; padding: 4px; list-style: none;
+  background: var(--surface-card); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.16); max-height: 260px; overflow-y: auto;
+}}
+.chart-search-results li {{
+  padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;
+  color: var(--text-secondary); display: flex; justify-content: space-between; gap: 10px;
+}}
+.chart-search-results li .muni {{ color: var(--text-primary); font-weight: 550; }}
+.chart-search-results li .meta {{ font-family: var(--mono); color: var(--text-muted); font-size: 11.5px; white-space: nowrap; }}
+.chart-search-results li:hover,
+.chart-search-results li[aria-selected="true"] {{ background: var(--accent-soft); }}
+.chart-search-results li.empty {{ cursor: default; color: var(--text-muted); font-style: italic; }}
+.chart-search-results li.empty:hover {{ background: none; }}
+
 .two-col {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }}
 @media (max-width: 700px) {{ .two-col {{ grid-template-columns: 1fr; }} }}
 
@@ -539,8 +574,14 @@ code {{ font-family: var(--mono); background: var(--surface-1); padding: 1px 5px
   </div>
 
   <div class="exhibit">
+    <div class="chart-search" id="funnel-search">
+      <svg class="chart-search-icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5.2" fill="none" stroke="currentColor" stroke-width="1.4"/><line x1="11" y1="11" x2="15" y2="15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <input type="text" id="funnel-search-input" class="chart-search-input" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="funnel-search-results" aria-autocomplete="list">
+      <button type="button" id="funnel-search-clear" class="chart-search-clear" hidden>&times;</button>
+      <ul id="funnel-search-results" class="chart-search-results" role="listbox" hidden></ul>
+    </div>
     <div id="chart-funnel" class="chart-container" style="min-height:460px"></div>
-    {B("div", "Figure 3. Every zone's round-2 result plotted against its size (log scale). Hover any point for that zone's municipality, vote count and round-1/round-2 shares. High-concentration zones (highlighted) span from tiny abroad voting posts to towns of several thousand voters — they are not a uniform small-N artifact. The flat horizontal line marks the national result (51.79%) for reference.", "Figura 3. O resultado do 2º turno de cada zona em função do seu tamanho (escala logarítmica). Passe o mouse sobre qualquer ponto para ver o município, o número de votos e os percentuais no 1º/2º turno dessa zona. As zonas de alta concentração (destacadas) vão de pequenos postos de votação no exterior a cidades com milhares de eleitores — não são um artefato uniforme de amostra pequena. A linha horizontal marca o resultado nacional (51,79%) como referência.", cls="cap")}
+    {B("div", "Figure 3. Every zone's round-2 result plotted against its size (log scale). Use the search box above to jump straight to a specific municipality. Hover any point for that zone's municipality, vote count and round-1/round-2 shares. High-concentration zones (highlighted) span from tiny abroad voting posts to towns of several thousand voters — they are not a uniform small-N artifact. The flat horizontal line marks the national result (51.79%) for reference.", "Figura 3. O resultado do 2º turno de cada zona em função do seu tamanho (escala logarítmica). Use a busca acima para ir direto a um município específico. Passe o mouse sobre qualquer ponto para ver o município, o número de votos e os percentuais no 1º/2º turno dessa zona. As zonas de alta concentração (destacadas) vão de pequenos postos de votação no exterior a cidades com milhares de eleitores — não são um artefato uniforme de amostra pequena. A linha horizontal marca o resultado nacional (51,79%) como referência.", cls="cap")}
   </div>
 
   {B("h3", "The actual 90%+ zones, largest first", "As zonas de 90%+, da maior para a menor")}
@@ -611,8 +652,14 @@ code {{ font-family: var(--mono); background: var(--surface-1); padding: 1px 5px
   {B("p", "The single most direct way to check whether a 90%+ zone is \"real\" is to ask: did this zone already look like a stronghold in round 1, when turnout and ballot design were different and the field included 12 candidates? If round-2 high-concentration results appear out of nowhere in zones that were competitive in round 1, that's a red flag. If they're just round-1 strongholds voting the same way with a different opponent, that's normal.", "A forma mais direta de verificar se uma zona de 90%+ é \"real\" é perguntar: essa zona já parecia um reduto no 1º turno, quando o comparecimento e o desenho da cédula eram diferentes e o campo incluía 12 candidatos? Se resultados de alta concentração no 2º turno surgem do nada em zonas que eram disputadas no 1º turno, isso é um sinal de alerta. Se são apenas redutos do 1º turno votando da mesma forma com um adversário diferente, isso é normal.", cls="lede")}
 
   <div class="exhibit">
+    <div class="chart-search" id="r1vsr2-search">
+      <svg class="chart-search-icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5.2" fill="none" stroke="currentColor" stroke-width="1.4"/><line x1="11" y1="11" x2="15" y2="15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <input type="text" id="r1vsr2-search-input" class="chart-search-input" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="r1vsr2-search-results" aria-autocomplete="list">
+      <button type="button" id="r1vsr2-search-clear" class="chart-search-clear" hidden>&times;</button>
+      <ul id="r1vsr2-search-results" class="chart-search-results" role="listbox" hidden></ul>
+    </div>
     <div id="chart-r1-vs-r2" class="chart-container" style="min-height:620px;max-width:620px;margin:0 auto"></div>
-    {B("div", f"Figure 5. Every zone's round-1 two-candidate share (x) against its round-2 share (y). Hover a point for that zone's name and exact swing. The dashed line is y=x — perfect continuity. All {fnum(summary['n_total_zones_r2'],'en')} zones, including every 90%+ zone, sit almost exactly on it.", f"Figura 5. O percentual de Lula entre os dois candidatos no 1º turno (x) de cada zona contra seu percentual no 2º turno (y). Passe o mouse sobre um ponto para ver o nome da zona e a variação exata. A linha tracejada é y=x — continuidade perfeita. Todas as {fnum(summary['n_total_zones_r2'],'pt')} zonas, incluindo cada zona de 90%+, ficam quase exatamente sobre ela.", cls="cap")}
+    {B("div", f"Figure 5. Every zone's round-1 two-candidate share (x) against its round-2 share (y). Use the search box above to jump straight to a specific municipality. Hover a point for that zone's name and exact swing. The dashed line is y=x — perfect continuity. All {fnum(summary['n_total_zones_r2'],'en')} zones, including every 90%+ zone, sit almost exactly on it.", f"Figura 5. O percentual de Lula entre os dois candidatos no 1º turno (x) de cada zona contra seu percentual no 2º turno (y). Use a busca acima para ir direto a um município específico. Passe o mouse sobre um ponto para ver o nome da zona e a variação exata. A linha tracejada é y=x — continuidade perfeita. Todas as {fnum(summary['n_total_zones_r2'],'pt')} zonas, incluindo cada zona de 90%+, ficam quase exatamente sobre ela.", cls="cap")}
   </div>
 
   <div class="callout ok">
