@@ -1,0 +1,4 @@
+filename,url,download_time_utc,size_bytes,sha256
+votacao_candidato_munzona_2026.zip,https://cdn.tse.jus.br/estatistica/sead/odsele/votacao_candidato_munzona/votacao_candidato_munzona_2026.zip,2026-10-31T15:12:49+00:00,463947219,6d17915943d5ad18d425e8e570d57672219812efaf2f726bf4d6ddec0fc974d4
+detalhe_votacao_munzona_2026.zip,https://cdn.tse.jus.br/estatistica/sead/odsele/detalhe_votacao_munzona/detalhe_votacao_munzona_2026.zip,2026-10-31T15:12:49+00:00,4185676,96573c9bf4856e27843bede454ec8e070ff8c487342f8b7161b5408c20539e92
+municipios_tse_ibge_crosswalk.csv,https://raw.githubusercontent.com/betafcc/Municipios-Brasileiros-TSE/master/municipios_brasileiros_tse.csv,2026-10-31T15:14:00+00:00,178410,723eae7e5ac570370137777e4de8e5679af2fe29a05dd0b4ff04235cca5b901a
