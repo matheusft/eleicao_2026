@@ -337,6 +337,35 @@
 
     container.textContent = "";
     container.appendChild(svg);
+
+    // Programmatic selection API (used by e.g. a search box): moves the
+    // same highlight ring and tooltip a pointer hover would, but driven by
+    // index instead of mouse position. Returns the point's on-screen
+    // (viewport) coordinates so a caller can scroll it into view first.
+    function selectByIndex(idx) {
+      if (idx < 0 || idx >= screenPts.length) {
+        hi.style.display = "none";
+        hideTooltip();
+        return null;
+      }
+      const pt = screenPts[idx];
+      hi.setAttribute("cx", pt.sx);
+      hi.setAttribute("cy", pt.sy);
+      hi.setAttribute("stroke", points[idx].color);
+      hi.style.display = "block";
+      const svgPt = svg.createSVGPoint();
+      svgPt.x = pt.sx;
+      svgPt.y = pt.sy;
+      const client = svgPt.matrixTransform(g.getScreenCTM());
+      const info = opts.tooltipFn(points[idx]);
+      showTooltip(client.x, client.y, info.title, info.rows);
+      return { x: client.x, y: client.y };
+    }
+    function clearSelection() {
+      hi.style.display = "none";
+      hideTooltip();
+    }
+    return { selectByIndex, clearSelection };
   }
 
   // ===================================================================
