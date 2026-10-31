@@ -1,0 +1,27 @@
+# --- Python environment ---
+.venv_eleicao/
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# --- OS / editor cruft ---
+.DS_Store
+.vscode/
+.idea/
+
+# --- Pipeline data: everything under data/ is produced by scripts/ and is
+# reproducible from the official TSE source (see README.md "Running the
+# pipeline"). Raw TSE zips alone are ~470MB, well past what belongs in git.
+# Only small, human-authored documentation/provenance files are tracked:
+#   - data/raw/MANIFEST.csv          (download provenance: URL, time, sha256)
+#   - data/processed/DATA_DICTIONARY.md
+data/raw/*
+!data/raw/MANIFEST.csv
+data/processed/*
+!data/processed/DATA_DICTIONARY.md
+data/analysis/
+
+# --- Scratch / local-only ---
+*.log
+/tmp/
