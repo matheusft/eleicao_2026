@@ -7,11 +7,18 @@
   const C = window.ReportCharts;
   const D = window.CHART_DATA;
   const [UF, MUN, ZONA, ABROAD, N, P2, P1, DTURN, SWING] = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+  let funnelHandle = null; // set by renderFunnel(); used by the Figure 3 search box
+  let r1vsr2Handle = null; // set by renderR1vsR2(); used by the Figure 5 search box
 
   const I18N = {
     en: {
       locale: "en-GB",
       abroadTag: " (abroad)",
+      search: {
+        placeholder: "Search for a municipality…",
+        noResults: "No municipality matches that search",
+        abroad: "abroad",
+      },
       national: {
         r1Tooltip: "Round 1 share",
         r2Tooltip: "Round 2 share",
@@ -105,6 +112,11 @@
     pt: {
       locale: "pt-BR",
       abroadTag: " (exterior)",
+      search: {
+        placeholder: "Buscar por município…",
+        noResults: "Nenhum município corresponde a essa busca",
+        abroad: "exterior",
+      },
       national: {
         r1Tooltip: "Percentual no 1º turno",
         r2Tooltip: "Percentual no 2º turno",
@@ -291,7 +303,7 @@
         meta: z,
       };
     });
-    C.renderScatter("chart-funnel", points, {
+    funnelHandle = C.renderScatter("chart-funnel", points, {
       width: 780,
       height: 460,
       xType: "log",
@@ -340,7 +352,7 @@
           meta: z,
         };
       });
-    C.renderScatter("chart-r1-vs-r2", points, {
+    r1vsr2Handle = C.renderScatter("chart-r1-vs-r2", points, {
       width: 620,
       height: 620,
       margin: { top: 16, right: 20, bottom: 50, left: 56 },
@@ -616,6 +628,144 @@
     });
   }
 
+  // ---------------- Chart search boxes (Figure 3, Figure 5) ----------------
+  // Wired once per chart (the input/dropdown/clear-button DOM is static,
+  // server-rendered HTML that survives chart re-renders); only the scatter
+  // handle (reassigned by the render function on every init()) changes
+  // underneath it. `zones` is the exact array the chart built its `points`
+  // from, so array index == the index renderScatter expects.
+  function setupChartSearch({ idPrefix, zones, chartContainerId, getHandle }) {
+    const input = document.getElementById(`${idPrefix}-search-input`);
+    const resultsEl = document.getElementById(`${idPrefix}-search-results`);
+    const clearBtn = document.getElementById(`${idPrefix}-search-clear`);
+    if (!input || !resultsEl || !clearBtn) return;
+
+    function normalize(s) {
+      return s
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "")
+        .toLowerCase();
+    }
+
+    const index = zones.map((z, i) => ({
+      i,
+      norm: normalize(`${z[MUN]} ${z[UF]}`),
+      muni: z[MUN],
+      uf: z[UF],
+      zona: z[ZONA],
+      abroad: z[ABROAD],
+    }));
+
+    let activeIndex = -1;
+    let currentMatches = [];
+
+    function closeDropdown() {
+      resultsEl.hidden = true;
+      resultsEl.textContent = "";
+      input.setAttribute("aria-expanded", "false");
+      activeIndex = -1;
+    }
+
+    function updateActive(items) {
+      items.forEach((li, idx) => li.setAttribute("aria-selected", idx === activeIndex ? "true" : "false"));
+      if (activeIndex >= 0 && items[activeIndex]) items[activeIndex].scrollIntoView({ block: "nearest" });
+    }
+
+    function selectMatch(m) {
+      input.value = `${m.muni} / ${m.uf}`;
+      clearBtn.hidden = false;
+      closeDropdown();
+      const handle = getHandle();
+      if (!handle) return;
+      const pos = handle.selectByIndex(m.i);
+      if (pos) {
+        const el = document.getElementById(chartContainerId);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+
+    function renderResults(matches) {
+      currentMatches = matches;
+      activeIndex = -1;
+      resultsEl.textContent = "";
+      const S = I18N[currentLang()].search;
+      if (matches.length === 0) {
+        const li = document.createElement("li");
+        li.className = "empty";
+        li.textContent = S.noResults;
+        resultsEl.appendChild(li);
+      } else {
+        matches.forEach((m) => {
+          const li = document.createElement("li");
+          li.setAttribute("role", "option");
+          li.setAttribute("aria-selected", "false");
+          const muniSpan = document.createElement("span");
+          muniSpan.className = "muni";
+          muniSpan.textContent = m.muni + (m.abroad ? ` (${S.abroad})` : "");
+          const meta = document.createElement("span");
+          meta.className = "meta";
+          meta.textContent = `${m.uf} · #${m.zona}`;
+          li.appendChild(muniSpan);
+          li.appendChild(meta);
+          li.addEventListener("mousedown", (ev) => {
+            ev.preventDefault(); // fire before the input's blur-triggered close
+            selectMatch(m);
+          });
+          resultsEl.appendChild(li);
+        });
+      }
+      resultsEl.hidden = false;
+      input.setAttribute("aria-expanded", "true");
+    }
+
+    input.addEventListener("input", () => {
+      const q = input.value.trim();
+      clearBtn.hidden = q.length === 0;
+      if (q.length < 2) {
+        closeDropdown();
+        const handle = getHandle();
+        if (handle) handle.clearSelection();
+        return;
+      }
+      const nq = normalize(q);
+      renderResults(index.filter((m) => m.norm.includes(nq)).slice(0, 8));
+    });
+
+    input.addEventListener("keydown", (ev) => {
+      if (resultsEl.hidden) return;
+      const items = Array.from(resultsEl.querySelectorAll('li[role="option"]'));
+      if (ev.key === "ArrowDown") {
+        ev.preventDefault();
+        activeIndex = Math.min(activeIndex + 1, items.length - 1);
+        updateActive(items);
+      } else if (ev.key === "ArrowUp") {
+        ev.preventDefault();
+        activeIndex = Math.max(activeIndex - 1, 0);
+        updateActive(items);
+      } else if (ev.key === "Enter") {
+        if (activeIndex >= 0 && currentMatches[activeIndex]) {
+          ev.preventDefault();
+          selectMatch(currentMatches[activeIndex]);
+        }
+      } else if (ev.key === "Escape") {
+        closeDropdown();
+      }
+    });
+
+    input.addEventListener("blur", () => {
+      setTimeout(closeDropdown, 100); // let a mousedown selection register first
+    });
+
+    clearBtn.addEventListener("click", () => {
+      input.value = "";
+      clearBtn.hidden = true;
+      closeDropdown();
+      const handle = getHandle();
+      if (handle) handle.clearSelection();
+      input.focus();
+    });
+  }
+
   function init() {
     const lang = currentLang();
     const S = I18N[lang];
@@ -631,12 +781,44 @@
     renderStateTurnout(S, locale);
     renderVoteTransfer(S, locale);
     renderBlankNull(S, locale);
+
+    // The charts underneath the search boxes were just torn down and
+    // rebuilt (new highlight circle, new handle), so any previous
+    // selection no longer points at anything real -- reset the search
+    // UI to match.
+    ["funnel", "r1vsr2"].forEach((idPrefix) => {
+      const searchInput = document.getElementById(`${idPrefix}-search-input`);
+      const searchClear = document.getElementById(`${idPrefix}-search-clear`);
+      if (searchInput) {
+        searchInput.placeholder = S.search.placeholder;
+        searchInput.setAttribute("aria-label", S.search.placeholder);
+        searchInput.value = "";
+      }
+      if (searchClear) searchClear.hidden = true;
+      const searchResults = document.getElementById(`${idPrefix}-search-results`);
+      if (searchResults) {
+        searchResults.hidden = true;
+        searchResults.textContent = "";
+      }
+    });
   }
 
   window.ReportApp = { init, currentLang };
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
+  setupChartSearch({
+    idPrefix: "funnel",
+    zones: D.zones,
+    chartContainerId: "chart-funnel",
+    getHandle: () => funnelHandle,
+  });
+  setupChartSearch({
+    idPrefix: "r1vsr2",
+    zones: D.zones.filter((z) => z[P1] !== null),
+    chartContainerId: "chart-r1-vs-r2",
+    getHandle: () => r1vsr2Handle,
+  });
 
   // Re-render with new colors/text when the viewer toggles light/dark theme
   // or switches language (both are attributes on <html>).
