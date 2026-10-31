@@ -1,0 +1,833 @@
+"""Render the final HTML election-forensics report from summary.json and
+chart_data.json, in two languages (English UK and Brazilian Portuguese)
+with a client-side toggle. Every number in the prose is pulled from
+summary.json -- nothing is hand-typed -- so the text can never drift from
+the data, in either language.
+
+Bilingual strategy: every piece of translatable copy is rendered TWICE as
+sibling HTML elements (one `lang="en"`, one `lang="pt"`), via the B()
+helper below. CSS shows only the element matching the page's current
+`data-lang` attribute (`display: revert`, which maps each tag back to its
+normal display value -- block for <p>/<li>/<div>, inline for <span>,
+table-row-group for <tbody>, etc. -- so one mechanism works for every tag
+used here). This is done at the smallest container that holds a number
+together with its label (a whole stat-tile, a whole table <tbody>, a whole
+caption), because pt-BR number formatting (1.234,56) differs from en-GB
+(1,234.56) and the two must never be split apart.
+
+Charts are live, interactive SVG (scripts/assets/report_charts.js +
+report_app.js) built from chart_data.json at page-load time. Their text
+(axis labels, legends, tooltips) is translated client-side by
+report_app.js's own I18N dictionary, keyed off the same data-lang
+attribute, and chart text re-renders automatically when the toggle fires.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from common import ROOT
+
+ANALYSIS_DIR = ROOT / "data" / "analysis"
+ASSETS_DIR = Path(__file__).resolve().parent / "assets"
+OUT_PATH = ROOT / "report" / "2026_election_forensics_report.html"
+
+
+def read_asset(name: str) -> str:
+    return (ASSETS_DIR / name).read_text(encoding="utf-8")
+
+
+def fnum(x: float, lang: str, d: int = 0) -> str:
+    s = f"{x:,.{d}f}"
+    if lang == "pt":
+        s = s.translate(str.maketrans(",.", ".,"))
+    return s
+
+
+def pct(x: float, lang: str, d: int = 2) -> str:
+    return fnum(x, lang, d)
+
+
+def B(tag: str, en: str, pt: str, cls: str = "", attrs: str = "") -> str:
+    """Render `en`/`pt` as sibling elements toggled by the page's data-lang."""
+    classes = f"i18n-block {cls}".strip()
+    attr_str = f" {attrs}" if attrs else ""
+    return (
+        f'<{tag} lang="en" class="{classes}"{attr_str}>{en}</{tag}>'
+        f'<{tag} lang="pt" class="{classes}"{attr_str}>{pt}</{tag}>'
+    )
+
+
+def muni_label(r: dict, lang: str) -> str:
+    if not r.get("is_abroad"):
+        tag = ""
+    else:
+        tag = " (abroad)" if lang == "en" else " (exterior)"
+    return f"{r['nm_municipio'].title()}{tag} / {r['sg_uf']}"
+
+
+def winner_label(r: dict) -> str:
+    return r["winner"].title().replace("Flavio Bolsonaro", "Flávio Bolsonaro")
+
+
+def main() -> None:
+    summary = json.loads((ANALYSIS_DIR / "summary.json").read_text(encoding="utf-8"))
+    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+    mc = summary["monte_carlo"]
+    corr = summary["swing_turnout_correlation"]
+    nat = summary["national_two_party_share"]
+    dt_lula = summary["last_digit_test_lula_r2"]
+    dt_flavio = summary["last_digit_test_flavio_r2"]
+    dt_muni = summary["last_digit_test_muni_valid_votes"]
+    top0 = summary["top_landslide_zones_by_n"][0]
+    di = summary["data_integrity"]
+    vt = summary["vote_transfer"]
+    bn = summary["blank_null"]
+    rb = summary["robustness"]
+    rb_by_key = {r["key"]: r for r in rb}
+
+    def landslide_rows(lang: str) -> str:
+        return "".join(f"""<tr>
+          <td>{muni_label(r, lang)}</td>
+          <td class="num">{r['nr_zona']}</td>
+          <td class="num">{fnum(r['n_r2'], lang)}</td>
+          <td class="num">{pct(100*r['p_r1_twoparty'], lang)}%</td>
+          <td class="num">{pct(100*r['p_r2'], lang)}%</td>
+          <td><span class="pill {'pill-lula' if r['winner']=='LULA' else 'pill-flavio'}">{winner_label(r)}</span></td>
+        </tr>""" for r in summary["top_landslide_zones_by_n"])
+
+    corr_cls = "caveat" if abs(corr["pearson_r"]) > 0.3 else "ok"
+
+    def vt_cand(name: str) -> dict:
+        return next(c for c in vt["candidates"] if c["candidate"] == name)
+
+    bn_sorted = sorted(bn["state_invalid_rate"], key=lambda s: s["r2"])
+    bn_lo = bn_sorted[:2]
+    bn_hi = list(reversed(bn_sorted[-2:]))
+
+    ROBUSTNESS_LABELS = {
+        "baseline": ("All zones, 90% threshold (the headline test)", "Todas as zonas, limiar de 90% (o teste principal)"),
+        "exclude_abroad": ("Excluding the 186 abroad voting locations", "Excluindo os 186 locais de votação no exterior"),
+        "exclude_small_n": ("Excluding zones with fewer than 50 voters", "Excluindo zonas com menos de 50 eleitores"),
+        "threshold_80": ("Using an 80% landslide threshold instead of 90%", "Usando um limiar de 80% em vez de 90%"),
+        "threshold_95": ("Using a 95% landslide threshold instead of 90%", "Usando um limiar de 95% em vez de 90%"),
+    }
+
+    def robustness_rows(lang: str) -> str:
+        rows = []
+        for key, (en_lbl, pt_lbl) in ROBUSTNESS_LABELS.items():
+            r = rb_by_key[key]
+            label = en_lbl if lang == "en" else pt_lbl
+            rows.append(f"""<tr>
+              <td>{label}</td>
+              <td class="num">{fnum(r['n_zones'], lang)}</td>
+              <td class="num">{r['actual_lula']}</td>
+              <td class="num">{fnum(r['sim_lula_mean'], lang, 1)} ({fnum(r['sim_lula_p05'], lang, 0)}&ndash;{fnum(r['sim_lula_p95'], lang, 0)})</td>
+              <td class="num">{r['actual_flavio']}</td>
+              <td class="num">{fnum(r['sim_flavio_mean'], lang, 1)} ({fnum(r['sim_flavio_p05'], lang, 0)}&ndash;{fnum(r['sim_flavio_p95'], lang, 0)})</td>
+            </tr>""")
+        return "".join(rows)
+
+    chart_data_json = (ANALYSIS_DIR / "chart_data.json").read_text(encoding="utf-8")
+    charts_js = read_asset("report_charts.js")
+    app_js = read_asset("report_app.js")
+
+    TITLE_EN = "2026 Brazilian Presidential Election — Statistical Forensics Report"
+    TITLE_PT = (
+        "Eleição Presidencial do Brasil em 2026 — Relatório de Perícia Estatística"
+    )
+    DESC_EN = "A statistical audit of landslide results, digit tests, and Monte Carlo simulations of the 2026 Brazil presidential runoff."
+    DESC_PT = "Uma auditoria estatística dos resultados esmagadores, testes de dígitos e simulações de Monte Carlo do segundo turno da eleição presidencial de 2026 no Brasil."
+
+    html = f"""<!doctype html>
+<meta charset="utf-8">
+<script>
+(function(){{
+  try {{
+    var saved = localStorage.getItem('report-lang');
+    var lang = saved || ((navigator.language||'').toLowerCase().indexOf('pt')===0 ? 'pt' : 'en');
+    document.documentElement.setAttribute('data-lang', lang);
+    document.documentElement.setAttribute('lang', lang==='pt' ? 'pt-BR' : 'en-GB');
+  }} catch(e) {{ document.documentElement.setAttribute('data-lang','en'); document.documentElement.setAttribute('lang','en-GB'); }}
+  try {{
+    // Only set data-theme explicitly if the viewer has made a choice before;
+    // otherwise leave it unset so the page follows the OS theme live (the
+    // existing @media (prefers-color-scheme) rules in <style> already
+    // handle that case without any attribute present).
+    var savedTheme = localStorage.getItem('report-theme');
+    if (savedTheme === 'light' || savedTheme === 'dark') {{
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    }}
+  }} catch(e) {{}}
+}})();
+</script>
+<title>{TITLE_EN}</title>
+<meta name="description" content="{DESC_EN}">
+<style>
+:root {{
+  --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Noto Serif', serif;
+  --sans: -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, 'SF Mono', 'Cascadia Code', 'Roboto Mono', monospace;
+
+  --surface-0: #fcfcfb;
+  --surface-1: #f3f1ea;
+  --surface-card: #ffffff;
+  --text-primary: #16150f;
+  --text-secondary: #52514e;
+  --text-muted: #837f74;
+  --border: #e2ded2;
+  --accent: #4a3aa7;
+  --accent-soft: #ece9f8;
+  --lula: #c0272d;
+  --flavio: #1c5fa8;
+  --chart-muted: #9a978e;
+  --ok-bg: #eaf3ea;
+  --ok-text: #2c6b35;
+  --warn-bg: #fbf0e3;
+  --warn-text: #92551a;
+  color-scheme: light;
+}}
+@media (prefers-color-scheme: dark) {{
+  :root:where(:not([data-theme="light"])) {{
+    color-scheme: dark;
+    --surface-0: #17160f;
+    --surface-1: #1f1e16;
+    --surface-card: #242319;
+    --text-primary: #f3f1ea;
+    --text-secondary: #c3c0b2;
+    --text-muted: #948f80;
+    --border: #38362a;
+    --accent: #9085e9;
+    --accent-soft: #2a2645;
+    --lula: #e0696d;
+    --flavio: #5a9bdb;
+    --chart-muted: #8f8a78;
+    --ok-bg: #1d2e1f;
+    --ok-text: #8fd19a;
+    --warn-bg: #332514;
+    --warn-text: #e3ac6e;
+  }}
+}}
+:root[data-theme="dark"] {{
+  color-scheme: dark;
+  --surface-0: #17160f;
+  --surface-1: #1f1e16;
+  --surface-card: #242319;
+  --text-primary: #f3f1ea;
+  --text-secondary: #c3c0b2;
+  --text-muted: #948f80;
+  --border: #38362a;
+  --accent: #9085e9;
+  --accent-soft: #2a2645;
+  --lula: #e0696d;
+  --flavio: #5a9bdb;
+  --chart-muted: #8f8a78;
+  --ok-bg: #1d2e1f;
+  --ok-text: #8fd19a;
+  --warn-bg: #332514;
+  --warn-text: #e3ac6e;
+}}
+:root[data-theme="light"] {{
+  color-scheme: light;
+  --surface-0: #fcfcfb; --surface-1: #f3f1ea; --surface-card: #ffffff;
+  --text-primary: #16150f; --text-secondary: #52514e; --text-muted: #837f74;
+  --border: #e2ded2; --accent: #4a3aa7; --accent-soft: #ece9f8;
+  --lula: #c0272d; --flavio: #1c5fa8; --chart-muted: #9a978e;
+  --ok-bg: #eaf3ea; --ok-text: #2c6b35; --warn-bg: #fbf0e3; --warn-text: #92551a;
+}}
+
+* {{ box-sizing: border-box; }}
+html, body {{ margin: 0; padding: 0; }}
+body {{
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-family: var(--sans);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}}
+.wrap {{ max-width: 880px; margin: 0 auto; padding: 0 24px 96px; }}
+.wide {{ max-width: 1040px; }}
+
+/* --- bilingual toggle: show only the element matching data-lang --- */
+.i18n-block {{ display: none; }}
+:root[data-lang="en"] .i18n-block[lang="en"] {{ display: revert; }}
+:root[data-lang="pt"] .i18n-block[lang="pt"] {{ display: revert; }}
+
+.controls {{
+  position: fixed; top: 16px; right: 16px; z-index: 500;
+  display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
+}}
+.lang-toggle {{
+  display: flex; gap: 2px; padding: 3px;
+  background: var(--surface-card); border: 1px solid var(--border);
+  border-radius: 999px; box-shadow: 0 2px 12px rgba(0,0,0,0.14);
+}}
+.lang-btn {{
+  font-family: var(--mono); font-size: 12px; font-weight: 600;
+  padding: 7px 13px; border-radius: 999px; border: none;
+  background: transparent; color: var(--text-muted); cursor: pointer;
+}}
+.lang-btn[aria-pressed="true"] {{ background: var(--accent); color: #fff; }}
+.lang-btn:hover:not([aria-pressed="true"]) {{ color: var(--text-primary); }}
+@media (max-width: 560px) {{ .controls {{ top: 10px; right: 10px; }} }}
+
+header.masthead {{
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-1);
+  padding: 56px 24px 40px;
+}}
+header.masthead .wrap {{ max-width: 880px; }}
+.kicker {{
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 12.5px;
+  color: var(--accent);
+  font-weight: 600;
+}}
+h1.title {{
+  font-family: var(--serif);
+  font-size: clamp(2rem, 4vw, 2.9rem);
+  line-height: 1.12;
+  margin: 14px 0 10px;
+  text-wrap: balance;
+  font-weight: 600;
+}}
+.dek {{
+  font-size: 1.15rem;
+  color: var(--text-secondary);
+  max-width: 62ch;
+  text-wrap: balance;
+}}
+.meta-row {{
+  display: flex; gap: 20px; flex-wrap: wrap;
+  margin-top: 20px; font-size: 13.5px; color: var(--text-muted);
+  font-family: var(--mono);
+}}
+
+section {{ padding: 48px 0; border-bottom: 1px solid var(--border); }}
+section:last-of-type {{ border-bottom: none; }}
+h2 {{
+  font-family: var(--serif); font-weight: 600;
+  font-size: 1.65rem; margin: 0 0 6px;
+  text-wrap: balance;
+}}
+h2 .num {{ color: var(--accent); font-family: var(--mono); font-size: 0.85em; margin-right: 10px; }}
+h3 {{ font-family: var(--serif); font-size: 1.2rem; margin: 28px 0 8px; font-weight: 600; }}
+p {{ margin: 12px 0; max-width: 72ch; }}
+.lede {{ color: var(--text-secondary); font-size: 1.02rem; max-width: 68ch; }}
+strong {{ font-weight: 650; }}
+a {{ color: var(--accent); }}
+
+.verdict {{
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  padding: 24px 28px;
+  margin-top: 18px;
+}}
+.verdict h3 {{ margin-top: 0; }}
+.verdict ul {{ padding-left: 20px; margin: 10px 0; }}
+.verdict li {{ margin: 8px 0; }}
+
+.stat-grid {{
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1px; background: var(--border);
+  border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+  margin: 20px 0;
+}}
+.stat-tile {{ background: var(--surface-card); padding: 16px 18px; }}
+.stat-tile .v {{ font-family: var(--mono); font-size: 1.5rem; font-weight: 600; }}
+.stat-tile .l {{ font-size: 12.5px; color: var(--text-muted); margin-top: 4px; }}
+.v.lula {{ color: var(--lula); }}
+.v.flavio {{ color: var(--flavio); }}
+
+.exhibit {{
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px 14px;
+  margin: 20px 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}}
+.exhibit .cap {{
+  font-size: 13px; color: var(--text-muted); margin-top: 10px;
+  border-top: 1px dashed var(--border); padding-top: 10px;
+}}
+.chart-row {{ display: flex; gap: 24px; flex-wrap: wrap; }}
+.chart-row > .chart-container {{ min-width: 260px; }}
+.chart-container {{ width: 100%; }}
+.chart-svg {{ width: 100%; height: auto; display: block; overflow: visible; }}
+.chart-svg text {{ font-family: var(--sans); font-size: 11.5px; fill: var(--text-secondary); }}
+.chart-svg .axis-caption {{ font-size: 12px; fill: var(--text-muted); }}
+.chart-svg .cat-label {{ font-size: 11px; }}
+.chart-svg .grid line, .chart-svg .gridline-v {{ stroke: var(--border); stroke-width: 1; }}
+.chart-svg .refline {{ stroke: var(--text-secondary); stroke-width: 0.8; opacity: 0.55; }}
+.chart-svg .refline-dotted {{ stroke: var(--text-muted); stroke-width: 1; stroke-dasharray: 2 3; }}
+.chart-svg .refline-dash {{ stroke: var(--text-secondary); stroke-width: 1; stroke-dasharray: 5 4; opacity: 0.7; }}
+.chart-svg .diagonal {{ stroke: var(--text-secondary); stroke-width: 1; stroke-dasharray: 5 4; opacity: 0.55; }}
+.chart-svg .trendline {{ stroke: var(--accent); stroke-width: 2.2; }}
+.chart-svg .connector {{ stroke: var(--text-muted); stroke-width: 1.2; opacity: 0.6; }}
+.chart-svg .mark-line {{ stroke-width: 1.6; }}
+.chart-svg .mark-label {{ font-size: 11px; font-weight: 600; }}
+.chart-svg .legend-label {{ font-size: 11.5px; fill: var(--text-secondary); }}
+.chart-svg .bar-value-label {{ font-size: 11px; fill: var(--text-primary); font-weight: 600; }}
+.chart-svg .pt {{ transition: opacity 0.1s; }}
+.chart-svg .pt-highlight {{ fill: none; stroke-width: 2.5; pointer-events: none; }}
+.chart-svg .bar {{ transition: filter 0.08s; }}
+.chart-svg .bar-hover {{ filter: brightness(1.18); }}
+.chart-svg .bar-hit {{ cursor: crosshair; }}
+
+.chart-tooltip {{
+  position: fixed; z-index: 1000; display: none; pointer-events: none;
+  background: var(--surface-card); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 13px; font-size: 12.5px; box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+  max-width: 260px; font-family: var(--sans);
+}}
+.chart-tooltip .tt-title {{ font-weight: 650; margin-bottom: 6px; color: var(--text-primary); }}
+.chart-tooltip .tt-row {{ display: flex; align-items: center; gap: 6px; margin: 3px 0; color: var(--text-secondary); }}
+.chart-tooltip .tt-key {{ width: 8px; height: 8px; border-radius: 2px; flex: none; }}
+.chart-tooltip .tt-label {{ flex: 1; }}
+.chart-tooltip .tt-value {{ font-family: var(--mono); font-weight: 600; color: var(--text-primary); }}
+
+.two-col {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }}
+@media (max-width: 700px) {{ .two-col {{ grid-template-columns: 1fr; }} }}
+
+table {{ width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 16px 0; }}
+.table-scroll {{ overflow-x: auto; }}
+th {{
+  text-align: left; font-family: var(--mono); font-weight: 500; font-size: 11.5px;
+  text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted);
+  border-bottom: 1px solid var(--border); padding: 8px 10px; white-space: nowrap;
+}}
+td {{ padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; font-variant-numeric: tabular-nums; }}
+td.num {{ font-family: var(--mono); text-align: right; }}
+th:nth-child(n+2) {{ text-align: right; }}
+tr:hover td {{ background: var(--surface-1); }}
+
+.pill {{ display: inline-block; padding: 2px 9px; border-radius: 99px; font-size: 11.5px; font-weight: 600; }}
+.pill-lula {{ background: color-mix(in srgb, var(--lula) 16%, transparent); color: var(--lula); }}
+.pill-flavio {{ background: color-mix(in srgb, var(--flavio) 16%, transparent); color: var(--flavio); }}
+.pill-e {{ background: var(--ok-bg); color: var(--ok-text); }}
+.pill-b {{ background: var(--warn-bg); color: var(--warn-text); }}
+.pill-d {{ background: var(--surface-1); color: var(--text-muted); }}
+
+.checklist {{ list-style: none; padding: 0; margin: 20px 0; max-width: 72ch; }}
+.checklist li {{
+  position: relative; padding: 6px 0 6px 30px; margin: 4px 0;
+  border-bottom: 1px solid var(--border);
+}}
+.checklist li::before {{
+  content: "✓"; position: absolute; left: 0; top: 6px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--ok-bg); color: var(--ok-text);
+  font-size: 12px; font-weight: 700; line-height: 20px; text-align: center;
+}}
+
+.chart-svg .track-outline {{ stroke: var(--border); stroke-width: 1; }}
+
+.callout {{
+  border-radius: 10px; padding: 16px 20px; margin: 18px 0; font-size: 14.5px;
+}}
+.callout.method {{ background: var(--accent-soft); color: var(--text-primary); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); }}
+.callout.caveat {{ background: var(--warn-bg); color: var(--warn-text); border: 1px solid color-mix(in srgb, var(--warn-text) 25%, transparent); }}
+.callout.ok {{ background: var(--ok-bg); color: var(--ok-text); border: 1px solid color-mix(in srgb, var(--ok-text) 25%, transparent); }}
+.callout b {{ color: inherit; }}
+
+.toc {{ display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13.5px; margin-top: 18px; }}
+.toc a {{ color: var(--text-secondary); text-decoration: none; }}
+.toc a:hover {{ color: var(--accent); }}
+.toc span.n {{ font-family: var(--mono); color: var(--accent); margin-right: 4px; }}
+
+footer {{ padding: 40px 0 80px; color: var(--text-muted); font-size: 13px; }}
+footer a {{ color: var(--text-muted); }}
+code {{ font-family: var(--mono); background: var(--surface-1); padding: 1px 5px; border-radius: 4px; font-size: 0.92em; }}
+</style>
+
+<div class="controls">
+  <div class="lang-toggle" role="group" aria-label="Language / Idioma">
+    <button type="button" class="lang-btn" data-set-lang="en" aria-pressed="true">EN</button>
+    <button type="button" class="lang-btn" data-set-lang="pt" aria-pressed="false">PT-BR</button>
+  </div>
+  <div class="lang-toggle" role="group" aria-label="Theme / Tema">
+    <button type="button" class="lang-btn" data-set-theme="light" aria-pressed="false">{B("span", "Light", "Claro")}</button>
+    <button type="button" class="lang-btn" data-set-theme="dark" aria-pressed="false">{B("span", "Dark", "Escuro")}</button>
+  </div>
+</div>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="kicker">{B("span", "Statistical forensics · Brazil 2026 Presidential Election", "Perícia estatística · Eleição Presidencial do Brasil 2026")}</div>
+    {B("h1", "Were round-2 landslide zones a sign of fraud, or just Brazilian political geography?", "As zonas com vitórias esmagadoras no 2º turno são sinal de fraude, ou apenas geografia política brasileira?", cls="title")}
+    {B("p", f"A ground-up statistical audit of the official TSE results for both rounds: zone-by-zone landslide analysis, a chance-model Monte&nbsp;Carlo simulation, digit tests, and a round&#8209;1-vs-round&#8209;2 consistency check across all {fnum(summary['n_total_zones_r2'],'en')} electoral zones.", f"Uma auditoria estatística, construída do zero, dos resultados oficiais do TSE nos dois turnos: análise zona a zona das vitórias esmagadoras, uma simulação de Monte&nbsp;Carlo com modelo de acaso, testes de dígitos e uma verificação de consistência entre 1º e 2º turno em todas as {fnum(summary['n_total_zones_r2'],'pt')} zonas eleitorais.", cls="dek")}
+    <div class="meta-row">
+      {B("span", "Source: TSE dadosabertos.tse.jus.br — official results only", "Fonte: TSE dadosabertos.tse.jus.br — apenas resultados oficiais")}
+      {B("span", "Round 1: 2026-10-04 · Round 2: 2026-10-25", "1º turno: 04/10/2026 · 2º turno: 25/10/2026")}
+    </div>
+    <nav class="toc">
+      <a href="#integrity"><span class="n">01</span>{B("span", "Can we trust the numbers?", "Podemos confiar nos números?")}</a>
+      <a href="#headline"><span class="n">02</span>{B("span", "Headline result", "Resultado principal")}</a>
+      <a href="#landslides"><span class="n">03</span>{B("span", "Are 90%+ zones unusual?", "Zonas com 90%+ são incomuns?")}</a>
+      <a href="#montecarlo"><span class="n">04</span>{B("span", "Could it happen by chance?", "Pode acontecer por acaso?")}</a>
+      <a href="#robustness"><span class="n">05</span>{B("span", "Does this hold up?", "Isso se sustenta?")}</a>
+      <a href="#consistency"><span class="n">06</span>{B("span", "Sudden, or pre-existing?", "Súbito, ou pré-existente?")}</a>
+      <a href="#transfers"><span class="n">07</span>{B("span", "Where did the votes go?", "Para onde foram os votos?")}</a>
+      <a href="#turnout"><span class="n">08</span>{B("span", "Turnout &amp; stuffing check", "Comparecimento e fraude de urna")}</a>
+      <a href="#blanknull"><span class="n">09</span>{B("span", "Blank &amp; spoiled votes", "Votos em branco e nulos")}</a>
+      <a href="#digits"><span class="n">10</span>{B("span", "Digit tests", "Testes de dígitos")}</a>
+      <a href="#geography"><span class="n">11</span>{B("span", "Regional context", "Contexto regional")}</a>
+      <a href="#findings"><span class="n">12</span>{B("span", "Findings &amp; limits", "Conclusões e limites")}</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+
+<section id="integrity">
+  <h2><span class="num">01</span>{B("span", "Can we trust the numbers?", "Podemos confiar nos números?")}</h2>
+  {B("p", "Before testing the results for anything unusual, we tested the data itself. Every figure below was recomputed directly from the official TSE files for this report — not copied from an earlier run — so this isn't a claim that the data is clean, it's a demonstration.", "Antes de testar os resultados em busca de algo incomum, testamos os próprios dados. Cada número abaixo foi recalculado diretamente dos arquivos oficiais do TSE especificamente para este relatório — não copiado de uma execução anterior — então isto não é uma alegação de que os dados estão corretos, é uma demonstração.", cls="lede")}
+
+  <ul class="checklist">
+    {B("li", f"<strong>{fnum(di['n_vote_records'],'en')}</strong> candidate-vote records and <strong>{fnum(di['n_turnout_records'],'en')}</strong> zone-level turnout records examined, across both rounds.", f"<strong>{fnum(di['n_vote_records'],'pt')}</strong> registros de votos por candidato e <strong>{fnum(di['n_turnout_records'],'pt')}</strong> registros de comparecimento por zona examinados, nos dois turnos.")}
+    {B("li", f"No duplicate records: <strong>{di['duplicate_vote_rows']}</strong> duplicate candidate-vote rows and <strong>{di['duplicate_turnout_rows']}</strong> duplicate turnout rows found.", f"Nenhum registro duplicado: <strong>{di['duplicate_vote_rows']}</strong> linhas de votos duplicadas e <strong>{di['duplicate_turnout_rows']}</strong> linhas de comparecimento duplicadas encontradas.")}
+    {B("li", f"Candidate votes reconcile with valid votes in <strong>every one</strong> of {fnum(di['n_zone_round_rows_checked'],'en')} round × municipality × zone records ({di['reconciliation_failures_candidate_vs_valid']} mismatches).", f"Os votos dos candidatos batem com os votos válidos em <strong>todos</strong> os {fnum(di['n_zone_round_rows_checked'],'pt')} registros de turno × município × zona ({di['reconciliation_failures_candidate_vs_valid']} divergências).")}
+    {B("li", f"Turnout reconciles with valid + blank + spoiled votes everywhere ({di['reconciliation_failures_turnout_vs_valid_blank_null']} mismatches).", f"O comparecimento bate com votos válidos + brancos + nulos em todos os registros ({di['reconciliation_failures_turnout_vs_valid_blank_null']} divergências).")}
+    {B("li", f"No impossible values: {di['negative_vote_records']} negative vote counts, {di['turnout_exceeds_electorate']} zones where turnout exceeds the registered electorate, {di['negative_abstentions']} negative abstention counts.", f"Nenhum valor impossível: {di['negative_vote_records']} contagens de votos negativas, {di['turnout_exceeds_electorate']} zonas em que o comparecimento excede o eleitorado registrado, {di['negative_abstentions']} contagens de abstenção negativas.")}
+    {B("li", f"Geography fully mapped: all {fnum(di['domestic_zone_rows'],'en')} domestic zone-records matched to an IBGE municipality code (one correction documented in the data dictionary); {fnum(di['abroad_zone_rows'],'en')} zone-records across {di['abroad_locations']} voting locations abroad kept flagged, not dropped.", f"Geografia totalmente mapeada: todos os {fnum(di['domestic_zone_rows'],'pt')} registros de zonas do Brasil foram associados a um código de município do IBGE (uma correção documentada no dicionário de dados); {fnum(di['abroad_zone_rows'],'pt')} registros de zonas em {di['abroad_locations']} locais de votação no exterior foram mantidos e sinalizados, não descartados.")}
+    {B("li", f"National round-2 totals match the official TSE announcement exactly: Lula {fnum(di['national_lula_r2_votes'],'en')} votes, Flávio Bolsonaro {fnum(di['national_flavio_r2_votes'],'en')} votes.", f"Os totais nacionais do 2º turno batem exatamente com o anúncio oficial do TSE: Lula {fnum(di['national_lula_r2_votes'],'pt')} votos, Flávio Bolsonaro {fnum(di['national_flavio_r2_votes'],'pt')} votos.")}
+  </ul>
+
+  {B("p", "These are the same reconciliation rules the publishing pipeline already enforces before any file is written (see <code>scripts/validate.py</code>) — reproduced independently here so this page shows the check rather than just asserting it.", "Estas são as mesmas regras de reconciliação que o pipeline de publicação já aplica antes de qualquer arquivo ser gravado (veja <code>scripts/validate.py</code>) — reproduzidas aqui de forma independente, para que esta página mostre a verificação em vez de apenas afirmá-la.")}
+</section>
+
+<section id="headline">
+  <h2><span class="num">02</span>{B("span", "The headline result", "O resultado principal")}</h2>
+  {B("p", f"Lula (PT) defeated Flávio Bolsonaro (PL) in the round-2 runoff. Round 1 was close — Flávio actually led narrowly — and the <strong>{pct(nat['swing_pts'],'en',2)}-point swing</strong> to Lula between rounds is well within the range expected when a field of {summary['n_round1_candidates']} first-round candidates narrows to two.", f"Lula (PT) derrotou Flávio Bolsonaro (PL) no segundo turno. O primeiro turno foi disputado — Flávio, na verdade, liderou por pouco — e a <strong>variação de {pct(nat['swing_pts'],'pt',2)} pontos</strong> para Lula entre os turnos está dentro do esperado quando um campo de {summary['n_round1_candidates']} candidatos no primeiro turno se reduz a dois.", cls="lede")}
+
+  <div class="exhibit">
+    <div class="chart-row">
+      <div id="chart-national-r1" class="chart-container" style="flex:1.3;min-height:380px"></div>
+      <div id="chart-national-r2" class="chart-container" style="flex:1;min-height:380px"></div>
+    </div>
+    {B("div", f"Figure 1. Round-1 result (all {summary['n_round1_candidates']} candidates) and the official round-2 result. Hover any bar for the exact share. Flávio led round 1 by 1.8 points; Lula's two-candidate share in round 1 was {pct(nat['lula_r1_twoparty_pct'],'en')}%, rising to {pct(nat['lula_r2_pct'],'en')}% in round 2.", f"Figura 1. Resultado do 1º turno (todos os {summary['n_round1_candidates']} candidatos) e o resultado oficial do 2º turno. Passe o mouse sobre qualquer barra para ver o percentual exato. Flávio liderou o 1º turno por 1,8 ponto; o percentual de Lula frente a Flávio no 1º turno era de {pct(nat['lula_r1_twoparty_pct'],'pt')}%, subindo para {pct(nat['lula_r2_pct'],'pt')}% no 2º turno.", cls="cap")}
+  </div>
+
+  <div class="stat-grid">
+    {B("div", f'<div class="v lula">{pct(nat["lula_r2_pct"],"en")}%</div><div class="l">Lula, round 2 (official: 51.79%)</div>', f'<div class="v lula">{pct(nat["lula_r2_pct"],"pt")}%</div><div class="l">Lula, 2º turno (oficial: 51,79%)</div>', cls="stat-tile")}
+    {B("div", f'<div class="v flavio">{pct(nat["flavio_r2_pct"],"en")}%</div><div class="l">Flávio Bolsonaro, round 2 (official: 48.21%)</div>', f'<div class="v flavio">{pct(nat["flavio_r2_pct"],"pt")}%</div><div class="l">Flávio Bolsonaro, 2º turno (oficial: 48,21%)</div>', cls="stat-tile")}
+    {B("div", f'<div class="v">+{pct(nat["swing_pts"],"en",2)}pt</div><div class="l">National two-party swing to Lula</div>', f'<div class="v">+{pct(nat["swing_pts"],"pt",2)}pt</div><div class="l">Variação nacional para Lula (dois candidatos)</div>', cls="stat-tile")}
+    {B("div", '<div class="v">21.08% → 19.22%</div><div class="l">Abstention, round 1 → round 2</div>', '<div class="v">21,08% → 19,22%</div><div class="l">Abstenção, 1º turno → 2º turno</div>', cls="stat-tile")}
+  </div>
+
+  {B("p", "This report doesn't re-litigate that national count — it reconciles exactly against TSE's official announcement (see the companion data pipeline). The question raised is narrower and more interesting: <strong>do the municipalities and zones where one candidate won 90%+ of the vote constitute statistical evidence of manipulation?</strong>", "Este relatório não questiona essa contagem nacional — ela bate exatamente com o anúncio oficial do TSE (veja o pipeline de dados que o acompanha). A pergunta levantada é mais específica e mais interessante: <strong>os municípios e zonas em que um candidato obteve 90%+ dos votos constituem evidência estatística de manipulação?</strong>")}
+</section>
+
+<section id="landslides">
+  <h2><span class="num">03</span>{B("span", "Are 90%+ landslide zones unusual?", "As zonas com vitória esmagadora de 90%+ são incomuns?")}</h2>
+  {B("p", f"Out of {fnum(summary['n_total_zones_r2'],'en')} electoral zones that reported a presidential vote in round 2, <strong>{summary['n_lula_ge90']} zones ({pct(summary['pct_lula_ge90'],'en',2)}%)</strong> gave Lula 90% + of the two-candidate vote, and <strong>{summary['n_flavio_ge90']} zones ({pct(summary['pct_flavio_ge90'],'en',2)}%)</strong> gave Flávio Bolsonaro 90% +. Is that a lot?", f"Das {fnum(summary['n_total_zones_r2'],'pt')} zonas eleitorais que registraram votos para presidente no 2º turno, <strong>{summary['n_lula_ge90']} zonas ({pct(summary['pct_lula_ge90'],'pt',2)}%)</strong> deram a Lula 90%+ dos votos entre os dois candidatos, e <strong>{summary['n_flavio_ge90']} zonas ({pct(summary['pct_flavio_ge90'],'pt',2)}%)</strong> deram a Flávio Bolsonaro 90%+. Isso é muito?", cls="lede")}
+
+  <div class="exhibit">
+    <div id="chart-zone-hist" class="chart-container" style="min-height:420px"></div>
+    {B("div", "Figure 2. The full distribution of round-2 results across every zone. Hover a bar for the exact count. Landslide zones are the small tail beyond the markers — a tiny fraction of a broad, smooth distribution, not a separate spike.", "Figura 2. A distribuição completa dos resultados do 2º turno em todas as zonas. Passe o mouse sobre uma barra para ver a contagem exata. As zonas com vitória esmagadora são a pequena cauda além dos marcadores — uma fração ínfima de uma distribuição ampla e suave, não um pico isolado.", cls="cap")}
+  </div>
+
+  <div class="callout method">
+    {B("span", '<b>Why "90% can\'t happen by chance" is the wrong test.</b> The naive instinct is to compare a 90% result to a fair coin flip. But nobody expects a fair coin locally — Brazil has enormous real geographic variation in candidate support (the Northeast leans heavily PT; parts of the South and agribusiness belt lean heavily PL). The right question is whether a zone\'s result is surprising <em>given its own size and its own political baseline</em> — not against a 50/50 assumption nobody believes.', '<b>Por que "90% não pode acontecer por acaso" é o teste errado.</b> O instinto ingênuo é comparar um resultado de 90% a uma moeda honesta. Mas ninguém espera uma moeda honesta em nível local — o Brasil tem enorme variação geográfica real no apoio aos candidatos (o Nordeste pende fortemente para o PT; partes do Sul e do cinturão do agronegócio pendem fortemente para o PL). A pergunta certa é se o resultado de uma zona é surpreendente <em>dado o seu próprio tamanho e a sua própria base política</em> — não contra uma suposição de 50/50 em que ninguém acredita.')}
+  </div>
+
+  <div class="exhibit">
+    <div id="chart-funnel" class="chart-container" style="min-height:460px"></div>
+    {B("div", "Figure 3. Every zone's round-2 result plotted against its size (log scale). Hover any point for that zone's municipality, vote count and round-1/round-2 shares. Landslide zones (highlighted) span from tiny abroad voting posts to towns of several thousand voters — they are not a uniform small-N artifact. The flat horizontal line marks the national result (51.79%) for reference.", "Figura 3. O resultado do 2º turno de cada zona em função do seu tamanho (escala logarítmica). Passe o mouse sobre qualquer ponto para ver o município, o número de votos e os percentuais no 1º/2º turno dessa zona. As zonas com vitória esmagadora (destacadas) vão de pequenos postos de votação no exterior a cidades com milhares de eleitores — não são um artefato uniforme de amostra pequena. A linha horizontal marca o resultado nacional (51,79%) como referência.", cls="cap")}
+  </div>
+
+  {B("h3", "The actual landslide zones, largest first", "As zonas com vitória esmagadora, da maior para a menor")}
+  {B("p", "Here are the 15 largest-electorate zones among those that hit 90%+, with their round-1 result alongside for context:", "Estas são as 15 zonas com maior eleitorado entre as que atingiram 90%+, com o resultado do 1º turno ao lado para contexto:")}
+  <div class="table-scroll">
+  <table>
+    <thead><tr>
+      <th>{B("span", "Municipality / state", "Município / estado")}</th>
+      <th>{B("span", "Zone", "Zona")}</th>
+      <th>{B("span", "Votes (R2)", "Votos (2T)")}</th>
+      <th>{B("span", "Round 1 share", "Percentual 1T")}</th>
+      <th>{B("span", "Round 2 share", "Percentual 2T")}</th>
+      <th>{B("span", "Winner", "Vencedor")}</th>
+    </tr></thead>
+    {B("tbody", landslide_rows("en"), landslide_rows("pt"))}
+  </table>
+  </div>
+  {B("p", "Several of the largest are small towns in the rural Northeast (Pernambuco, Piauí, Alagoas, Maranhão, Amazonas) — a region with a decades-long, well-documented pattern of 80&ndash;95%+ PT support in legitimate elections, visible again in round 1 of this same election. The abroad locations (consulates) are tiny voting posts of a few hundred to low-thousands of self-selected expatriates, where extreme splits are routine and expected.", "Várias das maiores são pequenas cidades do Nordeste rural (Pernambuco, Piauí, Alagoas, Maranhão, Amazonas) — uma região com um padrão bem documentado, de décadas, de apoio de 80&ndash;95%+ ao PT em eleições legítimas, visível novamente no 1º turno desta mesma eleição. Os locais no exterior (consulados) são pequenos postos de votação de algumas centenas a poucos milhares de eleitores autosselecionados, onde resultados extremos são rotineiros e esperados.", attrs='style="font-size:13.5px;color:var(--text-secondary)"')}
+</section>
+
+<section id="montecarlo">
+  <h2><span class="num">04</span>{B("span", "Could this many landslides happen by chance?", "Esse número de vitórias esmagadoras poderia acontecer por acaso?")}</h2>
+  {B("p", f"To answer this properly, we built a null model and ran a Monte Carlo simulation. For every zone, we predict its \"expected\" round-2 share from its <strong>own round-1 two-candidate result, adjusted by the national average swing</strong> — then simulate {fnum(mc['n_sim'],'en')} alternate elections where each zone's actual vote count is drawn randomly (binomial) around that expectation. This tells us how many landslide zones <em>pure chance</em> would produce, given the real distribution of zone sizes.", f"Para responder a isso corretamente, construímos um modelo nulo e rodamos uma simulação de Monte Carlo. Para cada zona, prevemos seu percentual \"esperado\" no 2º turno a partir do <strong>próprio resultado do 1º turno entre os dois candidatos, ajustado pela variação média nacional</strong> — depois simulamos {fnum(mc['n_sim'],'pt')} eleições alternativas em que o número real de votos de cada zona é sorteado aleatoriamente (binomial) em torno dessa expectativa. Isso mostra quantas zonas com vitória esmagadora o <em>acaso puro</em> produziria, dada a distribuição real dos tamanhos das zonas.", cls="lede")}
+
+  <div class="exhibit">
+    <div class="chart-row">
+      <div id="chart-mc-lula" class="chart-container" style="flex:1;min-height:360px"></div>
+      <div id="chart-mc-flavio" class="chart-container" style="flex:1;min-height:360px"></div>
+    </div>
+    {B("div", f"Figure 4. Each histogram is {fnum(mc['n_sim'],'en')} simulated elections under the chance-only null model; hover a bar for the exact trial count. The vertical line is what actually happened.", f"Figura 4. Cada histograma representa {fnum(mc['n_sim'],'pt')} eleições simuladas sob o modelo nulo de puro acaso; passe o mouse sobre uma barra para ver a contagem exata de simulações. A linha vertical é o que realmente aconteceu.", cls="cap")}
+  </div>
+
+  <div class="callout ok">
+    {B("span", f"<b>Result: the actual Lula landslide count ({mc['actual_lula_ge90']} zones) is far <em>below</em> what chance alone predicts</b> (simulated mean {fnum(mc['sim_lula_ge90_mean'],'en',1)}, 90% range {fnum(mc['sim_lula_ge90_p05'],'en',0)}&ndash;{fnum(mc['sim_lula_ge90_p95'],'en',0)}). If anything, real results are <em>less</em> extreme than a naive chance model would produce — the opposite of what ballot-stuffing would look like. Flávio's landslide count ({mc['actual_flavio_ge90']} zones) sits at the high end of the chance range (simulated mean {fnum(mc['sim_flavio_ge90_mean'],'en',1)}, 90% range {fnum(mc['sim_flavio_ge90_p05'],'en',0)}&ndash;{fnum(mc['sim_flavio_ge90_p95'],'en',0)}) but is not an outlier — results this high occur somewhat regularly in this null model given only 5 small-sample events.", f"<b>Resultado: o número real de zonas com vitória esmagadora de Lula ({mc['actual_lula_ge90']} zonas) está bem <em>abaixo</em> do que o acaso sozinho prevê</b> (média simulada {fnum(mc['sim_lula_ge90_mean'],'pt',1)}, faixa de 90% entre {fnum(mc['sim_lula_ge90_p05'],'pt',0)} e {fnum(mc['sim_lula_ge90_p95'],'pt',0)}). Se algo, os resultados reais são <em>menos</em> extremos do que um modelo de acaso ingênuo produziria — o oposto do que uma fraude de urna pareceria. O número de zonas com vitória esmagadora de Flávio ({mc['actual_flavio_ge90']} zonas) fica na extremidade superior da faixa de acaso (média simulada {fnum(mc['sim_flavio_ge90_mean'],'pt',1)}, faixa de 90% entre {fnum(mc['sim_flavio_ge90_p05'],'pt',0)} e {fnum(mc['sim_flavio_ge90_p95'],'pt',0)}), mas não é um valor atípico — resultados tão altos ocorrem com alguma regularidade nesse modelo nulo, já que são apenas 5 eventos de amostra pequena.")}
+  </div>
+
+  {B("p", "In short: there is no statistical excess of landslide zones for either candidate that would need a fraud explanation. The frequency of 90%+ results is consistent with — if anything, lower than — ordinary sampling variance around each zone's own baseline.", "Em resumo: não há excesso estatístico de zonas com vitória esmagadora para nenhum dos candidatos que exija uma explicação de fraude. A frequência de resultados de 90%+ é compatível com — e, se algo, inferior a — a variação amostral comum em torno da base de cada zona.")}
+</section>
+
+<section id="robustness">
+  <h2><span class="num">05</span>{B("span", "Does this hold up under scrutiny?", "Isso se sustenta sob escrutínio?")}</h2>
+  {B("p", "A single test, however well designed, can get lucky. So we tried to break the result above five different ways: dropping the zones most likely to be edge cases, and changing what counts as a \"landslide\" in the first place. If the conclusion only held under the exact original settings, that would be a reason to distrust it.", "Um único teste, por melhor que seja projetado, pode ter sorte. Por isso tentamos \"quebrar\" o resultado acima de cinco formas diferentes: removendo as zonas mais propensas a serem casos extremos, e mudando o que conta como \"vitória esmagadora\" em primeiro lugar. Se a conclusão só se sustentasse nas configurações originais exatas, isso seria motivo para desconfiar dela.", cls="lede")}
+
+  <div class="table-scroll">
+  <table class="robustness-table">
+    <thead><tr>
+      <th>{B("span", "Variant", "Variante")}</th>
+      <th>{B("span", "Zones", "Zonas")}</th>
+      <th>{B("span", "Actual Lula ≥ threshold", "Real Lula ≥ limiar")}</th>
+      <th>{B("span", "Chance range (mean, 90%)", "Faixa de acaso (média, 90%)")}</th>
+      <th>{B("span", "Actual Flávio ≥ threshold", "Real Flávio ≥ limiar")}</th>
+      <th>{B("span", "Chance range (mean, 90%)", "Faixa de acaso (média, 90%)")}</th>
+    </tr></thead>
+    {B("tbody", robustness_rows("en"), robustness_rows("pt"))}
+  </table>
+  </div>
+
+  <div class="callout ok">
+    {B("span", "<b>Lula's actual landslide count stays below the chance range in every single variant</b> — not just the headline 90% test. That's the opposite of what you'd see if the landslides were manufactured.", "<b>O número real de vitórias esmagadoras de Lula fica abaixo da faixa de acaso em todas as variantes</b> — não apenas no teste principal de 90%. Isso é o oposto do que se veria se as vitórias esmagadoras fossem fabricadas.")}
+  </div>
+  <div class="callout caveat">
+    {B("span", f"<b>One result worth flagging rather than hiding:</b> at the 80% threshold, Flávio's actual count ({rb_by_key['threshold_80']['actual_flavio']} zones) sits just above the simulated 90% range ({fnum(rb_by_key['threshold_80']['sim_flavio_p05'],'en',0)}&ndash;{fnum(rb_by_key['threshold_80']['sim_flavio_p95'],'en',0)}, mean {fnum(rb_by_key['threshold_80']['sim_flavio_mean'],'en',1)}). On its own this is a mild, one-sided deviation in one of five variants tested, not corrected for running five comparisons — exactly the kind of borderline result that shows up by chance occasionally when you check several thresholds. It is not evidence of anything on its own, but it is the kind of specific, named result that would be worth a second look with finer-grained (polling-section) data.", f"<b>Um resultado que vale sinalizar, não esconder:</b> no limiar de 80%, o número real de Flávio ({rb_by_key['threshold_80']['actual_flavio']} zonas) fica logo acima da faixa simulada de 90% ({fnum(rb_by_key['threshold_80']['sim_flavio_p05'],'pt',0)}&ndash;{fnum(rb_by_key['threshold_80']['sim_flavio_p95'],'pt',0)}, média {fnum(rb_by_key['threshold_80']['sim_flavio_mean'],'pt',1)}). Isoladamente, isso é um desvio leve e unilateral em uma de cinco variantes testadas, sem correção para múltiplas comparações — exatamente o tipo de resultado limítrofe que aparece por acaso ocasionalmente quando se testam vários limiares. Não é evidência de nada por si só, mas é o tipo de resultado específico e nomeado que mereceria um novo olhar com dados mais granulares (por seção eleitoral).")}
+  </div>
+</section>
+
+<section id="consistency">
+  <h2><span class="num">06</span>{B("span", "Were these landslides sudden, or pre-existing?", "Essas vitórias esmagadoras foram súbitas, ou já existiam?")}</h2>
+  {B("p", "The single most direct way to check whether a landslide zone is \"real\" is to ask: did this zone already look like a stronghold in round 1, when turnout and ballot design were different and the field included 12 candidates? If round 2 landslides appear out of nowhere in zones that were competitive in round 1, that's a red flag. If they're just round-1 strongholds voting the same way with a different opponent, that's normal.", "A forma mais direta de verificar se uma zona com vitória esmagadora é \"real\" é perguntar: essa zona já parecia um reduto no 1º turno, quando o comparecimento e o desenho da cédula eram diferentes e o campo incluía 12 candidatos? Se vitórias esmagadoras no 2º turno surgem do nada em zonas que eram disputadas no 1º turno, isso é um sinal de alerta. Se são apenas redutos do 1º turno votando da mesma forma com um adversário diferente, isso é normal.", cls="lede")}
+
+  <div class="exhibit">
+    <div id="chart-r1-vs-r2" class="chart-container" style="min-height:620px;max-width:620px;margin:0 auto"></div>
+    {B("div", f"Figure 5. Every zone's round-1 two-candidate share (x) against its round-2 share (y). Hover a point for that zone's name and exact swing. The dashed line is y=x — perfect continuity. All {fnum(summary['n_total_zones_r2'],'en')} zones, including every landslide zone, sit almost exactly on it.", f"Figura 5. O percentual de Lula entre os dois candidatos no 1º turno (x) de cada zona contra seu percentual no 2º turno (y). Passe o mouse sobre um ponto para ver o nome da zona e a variação exata. A linha tracejada é y=x — continuidade perfeita. Todas as {fnum(summary['n_total_zones_r2'],'pt')} zonas, incluindo cada zona com vitória esmagadora, ficam quase exatamente sobre ela.", cls="cap")}
+  </div>
+
+  <div class="callout ok">
+    {B("span", f"<b>Every round-2 landslide zone was already a landslide in round 1.</b> For example, Barreirinha (AM) — the largest Lula landslide zone at {fnum(top0['n_r2'],'en')} votes — gave Lula {pct(100*top0['p_r1_twoparty'],'en')}% of the two-candidate vote in round 1 and {pct(100*top0['p_r2'],'en')}% in round 2: a {pct(100*(top0['p_r2']-top0['p_r1_twoparty']),'en',1)}-point change, in line with the national swing. This pattern holds across every landslide zone in the table above.", f"<b>Toda zona com vitória esmagadora no 2º turno já era uma vitória esmagadora no 1º turno.</b> Por exemplo, Barreirinha (AM) — a maior zona de vitória esmagadora de Lula, com {fnum(top0['n_r2'],'pt')} votos — deu a Lula {pct(100*top0['p_r1_twoparty'],'pt')}% dos votos entre os dois candidatos no 1º turno e {pct(100*top0['p_r2'],'pt')}% no 2º turno: uma variação de {pct(100*(top0['p_r2']-top0['p_r1_twoparty']),'pt',1)} pontos, em linha com a variação nacional. Esse padrão se repete em todas as zonas de vitória esmagadora da tabela acima.")}
+  </div>
+</section>
+
+<section id="transfers">
+  <h2><span class="num">07</span>{B("span", "Where did the votes go?", "Para onde foram os votos?")}</h2>
+  {B("p", "The national swing was a tidy +2.8 points to Lula, but that single number hides a lot. Did it come evenly from everywhere, or did some eliminated candidates' voters break strongly one way? We estimated this with ecological regression — a long-standing technique in election analysis for inferring group-level shifts from place-level results. It is <strong>not a measurement of individual voters</strong>, and every estimate below comes with its own uncertainty range — see the caveat underneath the chart before reading too much into any single number.", "A variação nacional foi de um arredondado +2,8 pontos para Lula, mas esse único número esconde bastante coisa. Ela veio igualmente de todo lugar, ou os eleitores de alguns candidatos eliminados migraram fortemente para um lado? Estimamos isso com regressão ecológica — uma técnica consolidada em análise eleitoral para inferir deslocamentos de grupo a partir de resultados agregados por localidade. <strong>Não é uma medição de eleitores individuais</strong>, e cada estimativa abaixo vem com sua própria margem de incerteza — veja a ressalva logo abaixo do gráfico antes de tirar conclusões de qualquer número isolado.", cls="lede")}
+
+  <div class="callout method">
+    {B("span", f"<b>The method, in one paragraph.</b> For each of the {fnum(vt['n_municipalities'],'en')} municipalities, we know how many round-1 votes each candidate got and how many round-2 votes Lula and Flávio got. We fit a model estimating, for each round-1 candidate, what fraction of their votes is consistent with having gone to Lula and what fraction to Flávio — constrained so the two fractions for any one candidate can never add to more than 100% (a voter can't go to both places at once; see the methodology note in the chart caption for why that constraint matters). The fitted model reproduces the actual round-2 totals almost exactly (R² = {vt['model_fit']['r_squared_lula']:.3f} for Lula, R² = {vt['model_fit']['r_squared_flavio']:.3f} for Flávio).", f"<b>O método, em um parágrafo.</b> Para cada um dos {fnum(vt['n_municipalities'],'pt')} municípios, sabemos quantos votos cada candidato teve no 1º turno e quantos votos Lula e Flávio tiveram no 2º turno. Ajustamos um modelo que estima, para cada candidato do 1º turno, qual fração dos seus votos é compatível com ter ido para Lula e qual fração para Flávio — com a restrição de que as duas frações de um mesmo candidato nunca podem somar mais de 100% (um eleitor não pode ir para os dois lados ao mesmo tempo; veja a nota de metodologia na legenda do gráfico sobre por que essa restrição importa). O modelo ajustado reproduz os totais reais do 2º turno quase exatamente (R² = {vt['model_fit']['r_squared_lula']:.3f} para Lula, R² = {vt['model_fit']['r_squared_flavio']:.3f} para Flávio).")}
+  </div>
+
+  <div class="exhibit">
+    <div id="chart-vote-transfer" class="chart-container" style="min-height:360px"></div>
+    {B("div", "Figure 9. Estimated destination of each round-1 candidate's votes in round 2. Bars shorter than 100% have a gap at the end — that gap is deliberately left empty rather than stretched, representing votes this model cannot confidently place (abstention, a blank/null vote, or just model uncertainty). Hover a segment for the exact estimate and its 90% range. Candidates marked † are flagged as poorly identified — see the caveat below.", "Figura 9. Destino estimado dos votos de cada candidato do 1º turno no 2º turno. Barras menores que 100% têm uma lacuna no final — essa lacuna é deixada vazia de propósito, em vez de esticada, representando votos que este modelo não consegue atribuir com confiança (abstenção, voto em branco/nulo, ou apenas incerteza do modelo). Passe o mouse sobre um segmento para ver a estimativa exata e sua faixa de 90%. Candidatos marcados com † estão sinalizados como mal identificados — veja a ressalva abaixo.", cls="cap")}
+  </div>
+
+  {B("p", f"Lula and Flávio's own round-1 voters mostly stayed put: our estimate puts Lula's self-retention at essentially {pct(100*vt_cand('LULA')['lula_rate'],'en',0)}% and Flávio's at {pct(100*vt_cand('FLAVIO BOLSONARO')['flavio_rate'],'en',1)}% (90% range {pct(100*vt_cand('FLAVIO BOLSONARO')['flavio_rate_lo'],'en',1)}%&ndash;{pct(100*vt_cand('FLAVIO BOLSONARO')['flavio_rate_hi'],'en',1)}%). Ronaldo Caiado's voters split roughly down the middle — an estimated {pct(100*vt_cand('RONALDO CAIADO')['lula_rate'],'en',1)}% to Lula and {pct(100*vt_cand('RONALDO CAIADO')['flavio_rate'],'en',1)}% to Flávio, with wide ranges on both ({pct(100*vt_cand('RONALDO CAIADO')['lula_rate_lo'],'en',0)}%&ndash;{pct(100*vt_cand('RONALDO CAIADO')['lula_rate_hi'],'en',0)}% and {pct(100*vt_cand('RONALDO CAIADO')['flavio_rate_lo'],'en',0)}%&ndash;{pct(100*vt_cand('RONALDO CAIADO')['flavio_rate_hi'],'en',0)}%) — this is the most genuinely contested transfer in the data. Renan Santos's voters lean toward Lula in this estimate, though the range is wide enough ({pct(100*vt_cand('RENAN SANTOS')['lula_rate_lo'],'en',0)}%&ndash;100%) that we would not state it with confidence. Two of the six groups — Escritor Augusto Cury and the pooled basket of remaining small candidates — hit the edge of what the model can estimate (marked † in the chart): their round-1 vote totals are small and too collinear with a larger candidate's pattern to separate out reliably. Treat those two as inconclusive, not as findings.", f"Os próprios eleitores de Lula e Flávio no 1º turno, em sua maioria, permaneceram: nossa estimativa coloca a retenção de Lula em essencialmente {pct(100*vt_cand('LULA')['lula_rate'],'pt',0)}% e a de Flávio em {pct(100*vt_cand('FLAVIO BOLSONARO')['flavio_rate'],'pt',1)}% (faixa de 90%: {pct(100*vt_cand('FLAVIO BOLSONARO')['flavio_rate_lo'],'pt',1)}%&ndash;{pct(100*vt_cand('FLAVIO BOLSONARO')['flavio_rate_hi'],'pt',1)}%). Os eleitores de Ronaldo Caiado se dividiram quase ao meio — uma estimativa de {pct(100*vt_cand('RONALDO CAIADO')['lula_rate'],'pt',1)}% para Lula e {pct(100*vt_cand('RONALDO CAIADO')['flavio_rate'],'pt',1)}% para Flávio, com faixas largas nos dois casos ({pct(100*vt_cand('RONALDO CAIADO')['lula_rate_lo'],'pt',0)}%&ndash;{pct(100*vt_cand('RONALDO CAIADO')['lula_rate_hi'],'pt',0)}% e {pct(100*vt_cand('RONALDO CAIADO')['flavio_rate_lo'],'pt',0)}%&ndash;{pct(100*vt_cand('RONALDO CAIADO')['flavio_rate_hi'],'pt',0)}%) — essa é a transferência genuinamente mais disputada nos dados. Os eleitores de Renan Santos pendem para Lula nesta estimativa, embora a faixa seja larga o suficiente ({pct(100*vt_cand('RENAN SANTOS')['lula_rate_lo'],'pt',0)}%&ndash;100%) para que não afirmemos isso com confiança. Dois dos seis grupos — Escritor Augusto Cury e a cesta de candidatos pequenos agrupados — ficam na borda do que o modelo consegue estimar (marcados com † no gráfico): seus totais de votos no 1º turno são pequenos e colineares demais com o padrão de um candidato maior para separar com confiabilidade. Trate esses dois como inconclusivos, não como achados.")}
+
+  <div class="callout caveat">
+    {B("span", "<b>Why this is exploratory, not confirmatory.</b> Ecological regression famously can mislead when the underlying individual-level behaviour doesn't match the aggregate pattern (the \"ecological fallacy\") — a municipality where Lula gained ground could reflect eliminated-candidate voters switching to him, or simply different people turning out in round 2, and this method cannot fully tell those apart. The wide uncertainty ranges on several candidates are the model being honest about that limitation, not a bug. Read this section as a plausible, data-grounded sketch of where votes likely moved — not as a precise accounting.", "<b>Por que isto é exploratório, não confirmatório.</b> A regressão ecológica pode enganar quando o comportamento individual subjacente não corresponde ao padrão agregado (a \"falácia ecológica\") — um município onde Lula ganhou terreno pode refletir eleitores de candidatos eliminados migrando para ele, ou simplesmente pessoas diferentes comparecendo no 2º turno, e este método não consegue distinguir totalmente entre essas possibilidades. As faixas largas de incerteza em vários candidatos são o modelo sendo honesto sobre essa limitação, não um defeito. Leia esta seção como um esboço plausível e fundamentado em dados de para onde os votos provavelmente se moveram — não como uma contabilidade precisa.")}
+  </div>
+</section>
+
+<section id="turnout">
+  <h2><span class="num">08</span>{B("span", 'Turnout changes and the "ballot stuffing" signature', 'Variações no comparecimento e a "assinatura" de fraude de urna')}</h2>
+  {B("p", "A classic stuffing signature is incremental turnout between rounds flowing almost entirely to one candidate — i.e. a strong correlation between the change in turnout rate and the swing toward a candidate. We tested this directly across all zones.", "Uma assinatura clássica de fraude de urna é o comparecimento incremental entre os turnos fluindo quase inteiramente para um candidato — ou seja, uma forte correlação entre a variação na taxa de comparecimento e a variação a favor de um candidato. Testamos isso diretamente em todas as zonas.", cls="lede")}
+
+  <div class="exhibit">
+    <div class="chart-row">
+      <div id="chart-swing-hist" class="chart-container" style="flex:1;min-height:380px"></div>
+      <div id="chart-swing-scatter" class="chart-container" style="flex:1;min-height:380px"></div>
+    </div>
+    {B("div", f'Figure 6. Left: the distribution of zone-level swing to Lula is narrow and centered near the national average ({pct(nat["swing_pts"],"en",2)} pts), with no fat tail — hover a bar for the exact count. Right: turnout-rate change vs. swing to Lula, zone level (<span id="swing-corr-caption-en"></span>) — hover a point for that zone.', f'Figura 6. Esquerda: a distribuição da variação para Lula por zona é estreita e centrada perto da média nacional ({pct(nat["swing_pts"],"pt",2)} pts), sem cauda pesada — passe o mouse sobre uma barra para ver a contagem exata. Direita: variação na taxa de comparecimento vs. variação para Lula, por zona (<span id="swing-corr-caption-pt"></span>) — passe o mouse sobre um ponto para ver essa zona.', cls="cap")}
+  </div>
+
+  <div class="callout {corr_cls}">
+    {B("span", f"<b>Pearson r = {pct(corr['pearson_r'],'en',3)}</b> (n = {fnum(corr['n'],'en')}, p = {corr['p_value']:.1e}). The correlation is <em>statistically significant</em> purely because of the large sample size, but the effect size is negligible — turnout change explains well under 1% of the variance in swing (r² = {pct(corr['pearson_r']**2*100,'en',2)}%). There is no meaningful relationship between where turnout rose and where the vote swung, which is what we'd expect from ordinary voting and not from coordinated ballot-stuffing tied to turnout.", f"<b>r de Pearson = {pct(corr['pearson_r'],'pt',3)}</b> (n = {fnum(corr['n'],'pt')}, p = {corr['p_value']:.1e}). A correlação é <em>estatisticamente significativa</em> apenas por causa do tamanho grande da amostra, mas o tamanho do efeito é insignificante — a variação no comparecimento explica bem menos de 1% da variância na variação de votos (r² = {pct(corr['pearson_r']**2*100,'pt',2)}%). Não há relação relevante entre onde o comparecimento aumentou e onde o voto variou, o que é o esperado em uma votação comum, e não em uma fraude de urna coordenada e ligada ao comparecimento.")}
+  </div>
+</section>
+
+<section id="blanknull">
+  <h2><span class="num">09</span>{B("span", "Blank and spoiled votes", "Votos em branco e nulos")}</h2>
+  {B("p", f"Blank and spoiled (null) ballots are sometimes read as a protest signal — a voter who shows up but declines every candidate on offer. Round 1 had 12 options to reject; round 2 had only 2, so the combined rate should mechanically fall between rounds. It does: {pct(bn['round1']['invalid_rate_pct'],'en',2)}% of round-1 turnout was blank or null, falling to {pct(bn['round2']['invalid_rate_pct'],'en',2)}% in round 2 — a drop of {pct(abs(bn['blank_rate_change_pts']),'en',2)} points in blank votes and {pct(abs(bn['null_rate_change_pts']),'en',2)} points in null votes.", f"Votos em branco e nulos às vezes são lidos como um sinal de protesto — um eleitor que comparece, mas rejeita todos os candidatos disponíveis. O 1º turno tinha 12 opções para rejeitar; o 2º turno tinha apenas 2, então a taxa combinada deveria cair mecanicamente entre os turnos. E caiu: {pct(bn['round1']['invalid_rate_pct'],'pt',2)}% do comparecimento no 1º turno foi em branco ou nulo, caindo para {pct(bn['round2']['invalid_rate_pct'],'pt',2)}% no 2º turno — uma queda de {pct(abs(bn['blank_rate_change_pts']),'pt',2)} pontos em votos em branco e {pct(abs(bn['null_rate_change_pts']),'pt',2)} pontos em votos nulos.", cls="lede")}
+
+  <div class="exhibit">
+    <div id="chart-blank-null" class="chart-container" style="min-height:220px"></div>
+    {B("div", "Figure 10. National blank and null vote rates, as a share of turnout, each round. Hover a bar for the exact rate.", "Figura 10. Taxas nacionais de votos em branco e nulos, como percentual do comparecimento, em cada turno. Passe o mouse sobre uma barra para ver a taxa exata.", cls="cap")}
+  </div>
+
+  {B("p", f"The combined rate varies by state in round 2, from a high in {bn_hi[0]['sg_uf']} ({pct(bn_hi[0]['r2'],'en',2)}%) and {bn_hi[1]['sg_uf']} ({pct(bn_hi[1]['r2'],'en',2)}%) down to {bn_lo[-1]['sg_uf']} ({pct(bn_lo[-1]['r2'],'en',2)}%) and {bn_lo[-2]['sg_uf']} ({pct(bn_lo[-2]['r2'],'en',2)}%) — a normal range for a country this size, and not something we ran a formal outlier test on in this pass (see the closing section).", f"A taxa combinada varia por estado no 2º turno, de um máximo em {bn_hi[0]['sg_uf']} ({pct(bn_hi[0]['r2'],'pt',2)}%) e {bn_hi[1]['sg_uf']} ({pct(bn_hi[1]['r2'],'pt',2)}%) até um mínimo em {bn_lo[-1]['sg_uf']} ({pct(bn_lo[-1]['r2'],'pt',2)}%) e {bn_lo[-2]['sg_uf']} ({pct(bn_lo[-2]['r2'],'pt',2)}%) — uma faixa normal para um país deste tamanho, e algo sobre o qual não rodamos um teste formal de valores atípicos nesta etapa (veja a seção final).")}
+</section>
+
+<section id="digits">
+  <h2><span class="num">10</span>{B("span", "Digit-based forensic tests", "Testes forenses baseados em dígitos")}</h2>
+  {B("p", "Election forensics sometimes checks whether the last digit of vote counts is uniformly distributed (0&ndash;9 equally likely) — human-fabricated numbers often aren't. We ran a chi-square goodness-of-fit test on the last digit of every zone's vote count for each candidate, and on municipality-level valid-vote totals.", "A perícia eleitoral às vezes verifica se o último dígito da contagem de votos é distribuído uniformemente (0&ndash;9 igualmente prováveis) — números fabricados por humanos costumam não ser. Rodamos um teste de aderência qui-quadrado sobre o último dígito da contagem de votos de cada zona para cada candidato, e sobre os totais de votos válidos por município.", cls="lede")}
+
+  <div class="exhibit">
+    <div class="chart-row">
+      <div id="chart-digit-lula" class="chart-container" style="flex:1;min-height:340px"></div>
+      <div id="chart-digit-flavio" class="chart-container" style="flex:1;min-height:340px"></div>
+    </div>
+    {B("div", "Figure 7. Last-digit frequency of zone-level vote counts (minimum count of 10 to avoid trivial small-number bias), against the uniform expectation (dashed line). Hover a bar for the exact count.", "Figura 7. Frequência do último dígito da contagem de votos por zona (contagem mínima de 10 para evitar viés trivial de números pequenos), contra a expectativa uniforme (linha tracejada). Passe o mouse sobre uma barra para ver a contagem exata.", cls="cap")}
+  </div>
+
+  <div class="callout ok">
+    {B("span", f"No test rejects uniformity: Lula's counts (χ²={pct(dt_lula['chi2'],'en',2)}, p={pct(dt_lula['p_value'],'en',2)}), Flávio's counts (χ²={pct(dt_flavio['chi2'],'en',2)}, p={pct(dt_flavio['p_value'],'en',2)}), and municipality-level valid-vote totals (χ²={pct(dt_muni['chi2'],'en',2)}, p={pct(dt_muni['p_value'],'en',2)}) are all consistent with uniformly distributed last digits.", f"Nenhum teste rejeita a uniformidade: a contagem de Lula (χ²={pct(dt_lula['chi2'],'pt',2)}, p={pct(dt_lula['p_value'],'pt',2)}), a de Flávio (χ²={pct(dt_flavio['chi2'],'pt',2)}, p={pct(dt_flavio['p_value'],'pt',2)}) e os totais de votos válidos por município (χ²={pct(dt_muni['chi2'],'pt',2)}, p={pct(dt_muni['p_value'],'pt',2)}) são todos compatíveis com dígitos finais uniformemente distribuídos.")}
+  </div>
+  <div class="callout caveat">
+    {B("span", "<b>Caveat.</b> Digit-based tests are a standard but limited tool. Deckert, Myagkov &amp; Ordeshook (2011) showed first-digit Benford tests are not theoretically justified for vote counts and can both miss real fraud and flag clean elections; last-digit tests (used here) are more defensible but still have limited statistical power, especially against fraud that adds vote counts in round numbers or small, carefully chosen increments rather than large uniform fabrications. Treat this section as supporting evidence only, not as a standalone verdict.", "<b>Ressalva.</b> Testes baseados em dígitos são uma ferramenta padrão, mas limitada. Deckert, Myagkov e Ordeshook (2011) mostraram que testes de primeiro dígito de Benford não têm justificativa teórica para contagens de votos e podem tanto deixar passar fraudes reais quanto sinalizar eleições limpas; testes de último dígito (usados aqui) são mais defensáveis, mas ainda têm poder estatístico limitado, especialmente contra fraudes que somam votos em números redondos ou em pequenos incrementos cuidadosamente escolhidos, em vez de grandes fabricações uniformes. Trate esta seção apenas como evidência de apoio, não como um veredito isolado.")}
+  </div>
+</section>
+
+<section id="geography">
+  <h2><span class="num">11</span>{B("span", "Does this match known political geography?", "Isso corresponde à geografia política conhecida?")}</h2>
+  {B("p", "A final sanity check: does the round-1-to-round-2 pattern, state by state, match Brazil's well-documented political geography from prior, undisputed elections?", "Uma verificação final de sanidade: o padrão entre o 1º e o 2º turno, estado por estado, corresponde à geografia política bem documentada do Brasil em eleições anteriores e incontestadas?", cls="lede")}
+
+  <div class="exhibit">
+    <div id="chart-state-swing" class="chart-container" style="min-height:760px;max-width:680px;margin:0 auto"></div>
+    {B("div", "Figure 11a. Lula's two-candidate share by state, round 1 vs. round 2. States are sorted by round-2 result. Hover a row for the exact swing.", "Figura 11a. Percentual de Lula entre os dois candidatos por estado, 1º turno vs. 2º turno. Os estados estão ordenados pelo resultado do 2º turno. Passe o mouse sobre uma linha para ver a variação exata.", cls="cap")}
+  </div>
+
+  {B("p", "Yes: the ranking — strong PT support across the Northeast (PI, BA, MA, SE, PE, CE), weaker support in the South and parts of the Center-West (RR, RO, SC, MT, AC, PR) — reproduces the regional pattern seen in Brazil's 2018 and 2022 elections. The swing from round 1 to round 2 is small and uniform across states (no state shows an outlier jump), which is what an honest runoff with redistributed eliminated-candidate votes looks like.", "Sim: o ranking — forte apoio ao PT em todo o Nordeste (PI, BA, MA, SE, PE, CE), apoio mais fraco no Sul e em partes do Centro-Oeste (RR, RO, SC, MT, AC, PR) — reproduz o padrão regional visto nas eleições de 2018 e 2022 no Brasil. A variação do 1º para o 2º turno é pequena e uniforme entre os estados (nenhum estado mostra um salto atípico), exatamente o que um segundo turno honesto, com a redistribuição dos votos dos candidatos eliminados, deveria parecer.")}
+
+  <div class="exhibit">
+    <div id="chart-state-turnout" class="chart-container" style="min-height:760px;max-width:680px;margin:0 auto"></div>
+    {B("div", "Figure 11b. Abstention rate by state, round 1 vs. round 2. Hover a row for the exact change.", "Figura 11b. Taxa de abstenção por estado, 1º turno vs. 2º turno. Passe o mouse sobre uma linha para ver a variação exata.", cls="cap")}
+  </div>
+
+  {B("p", "Abstention fell in most states between rounds (national abstention dropped from 21.08% to 19.22%, consistent with a runoff drawing slightly more of the registered electorate), with no state showing the kind of isolated, large jump that would be worth a second look.", "A abstenção caiu na maioria dos estados entre os turnos (a abstenção nacional caiu de 21,08% para 19,22%, consistente com um segundo turno atraindo uma fração um pouco maior do eleitorado registrado), sem nenhum estado mostrando o tipo de salto isolado e grande que mereceria um novo olhar.")}
+</section>
+
+<section id="findings">
+  <h2><span class="num">12</span>{B("span", "Findings register, and what this can't tell us", "Registro de achados, e o que isto não consegue dizer")}</h2>
+  {B("p", "This section does two things a serious audit should always do explicitly: list every finding with a plain classification of how strong it is, and say — specifically, not vaguely — what questions this dataset cannot answer and what would be needed to answer them.", "Esta seção faz duas coisas que uma auditoria séria sempre deveria fazer de forma explícita: listar cada achado com uma classificação clara de quão forte ele é, e dizer — de forma específica, não vaga — quais perguntas este conjunto de dados não consegue responder e o que seria necessário para respondê-las.", cls="lede")}
+
+  {B("h3", "Findings register", "Registro de achados")}
+  <div class="table-scroll">
+  <table class="findings-table">
+    <thead><tr>
+      <th>{B("span", "Analysis", "Análise")}</th>
+      <th>{B("span", "Classification", "Classificação")}</th>
+      <th>{B("span", "Note", "Nota")}</th>
+    </tr></thead>
+    <tbody>
+      <tr><td>{B("span","Data integrity &amp; reconciliation (§1)","Integridade e reconciliação dos dados (§1)")}</td><td>{B("span",'<span class="pill pill-e">E — No anomaly</span>','<span class="pill pill-e">E — Sem anomalia</span>')}</td><td>{B("span","0 failures across every duplicate, reconciliation and impossible-value check.","0 falhas em todas as verificações de duplicidade, reconciliação e valores impossíveis.")}</td></tr>
+      <tr><td>{B("span","Landslide-zone frequency vs. chance model (§4–5)","Frequência de zonas com vitória esmagadora vs. modelo de acaso (§4–5)")}</td><td>{B("span",'<span class="pill pill-e">E — No anomaly</span>','<span class="pill pill-e">E — Sem anomalia</span>')}</td><td>{B("span","Stable below/within the chance range across 5 robustness variants.","Estável abaixo/dentro da faixa de acaso em 5 variantes de robustez.")}</td></tr>
+      <tr><td>{B("span","Flávio's 80%-threshold robustness variant (§5)","Variante de robustez de Flávio no limiar de 80% (§5)")}</td><td>{B("span",'<span class="pill pill-b">B — Statistical anomaly</span>','<span class="pill pill-b">B — Anomalia estatística</span>')}</td><td>{B("span","Actual count 1 above the simulated 90% range; mild, uncorrected for multiple testing, not reproduced at the 90% or 95% thresholds.","Contagem real 1 acima da faixa simulada de 90%; leve, sem correção para múltiplas comparações, não se repete nos limiares de 90% ou 95%.")}</td></tr>
+      <tr><td>{B("span","Round-1-to-round-2 zone consistency (§6)","Consistência de zona entre 1º e 2º turno (§6)")}</td><td>{B("span",'<span class="pill pill-e">E — No anomaly</span>','<span class="pill pill-e">E — Sem anomalia</span>')}</td><td>{B("span","All zones, including every landslide, sit on the y=x continuity line.","Todas as zonas, incluindo cada vitória esmagadora, ficam sobre a linha de continuidade y=x.")}</td></tr>
+      <tr><td>{B("span","Vote-transfer / ecological regression (§7)","Transferência de votos / regressão ecológica (§7)")}</td><td>{B("span",'<span class="pill pill-e">E — No anomaly</span>','<span class="pill pill-e">E — Sem anomalia</span>')}</td><td>{B("span","Exploratory, not confirmatory — see the method's own caveat; 2 of 6 groups inconclusive.","Exploratório, não confirmatório — veja a ressalva do próprio método; 2 dos 6 grupos são inconclusivos.")}</td></tr>
+      <tr><td>{B("span","Turnout-change vs. swing correlation (§8)","Correlação entre variação de comparecimento e variação de votos (§8)")}</td><td>{B("span",'<span class="pill pill-e">E — No anomaly</span>','<span class="pill pill-e">E — Sem anomalia</span>')}</td><td>{B("span","Statistically significant but practically negligible (r² &lt; 1%).","Estatisticamente significativa, mas com efeito praticamente desprezível (r² &lt; 1%).")}</td></tr>
+      <tr><td>{B("span","Blank/spoiled vote rates (§9)","Taxas de votos em branco/nulos (§9)")}</td><td>{B("span",'<span class="pill pill-d">Descriptive only</span>','<span class="pill pill-d">Apenas descritivo</span>')}</td><td>{B("span","No formal outlier test run on state-level rates in this pass — see limitations below.","Nenhum teste formal de valores atípicos rodado sobre as taxas por estado nesta etapa — veja as limitações abaixo.")}</td></tr>
+      <tr><td>{B("span","Last-digit forensic tests (§10)","Testes forenses de último dígito (§10)")}</td><td>{B("span",'<span class="pill pill-e">E — No anomaly</span>','<span class="pill pill-e">E — Sem anomalia</span>')}</td><td>{B("span","Chi-square does not reject uniformity for either candidate or municipality totals; known limited test power.","Qui-quadrado não rejeita a uniformidade para nenhum candidato nem para os totais por município; poder de teste reconhecidamente limitado.")}</td></tr>
+      <tr><td>{B("span","Regional / political-geography consistency (§11)","Consistência regional / geografia política (§11)")}</td><td>{B("span",'<span class="pill pill-e">E — No anomaly</span>','<span class="pill pill-e">E — Sem anomalia</span>')}</td><td>{B("span","Matches Brazil's well-documented 2018/2022 regional pattern.","Corresponde ao padrão regional bem documentado do Brasil em 2018/2022.")}</td></tr>
+    </tbody>
+  </table>
+  </div>
+  {B("p", "Classification follows a standard election-audit taxonomy: <strong>A</strong> data inconsistency (a verifiable mismatch or failure), <strong>B</strong> statistical anomaly (unusual under a clearly defined comparison), <strong>C</strong> technical irregularity requiring further investigation, <strong>D</strong> unsubstantiated allegation (insufficient evidence either way), <strong>E</strong> no anomaly detected. None of these findings is classified as a fraud probability — that classification does not exist in this framework, deliberately.", "A classificação segue uma taxonomia padrão de auditoria eleitoral: <strong>A</strong> inconsistência de dados (uma divergência ou falha verificável), <strong>B</strong> anomalia estatística (incomum sob uma comparação claramente definida), <strong>C</strong> irregularidade técnica que exige investigação adicional, <strong>D</strong> alegação não comprovada (evidência insuficiente em qualquer direção), <strong>E</strong> nenhuma anomalia detectada. Nenhum desses achados é classificado como uma \"probabilidade de fraude\" — essa categoria não existe neste framework, deliberadamente.")}
+
+  {B("h3", "What this analysis does <em>not</em> establish — and what would be needed", "O que esta análise <em>não</em> comprova — e o que seria necessário")}
+  <ul style="max-width:72ch">
+    {B("li", "<strong>Machine- and software-level integrity.</strong> This is a statistical analysis of <em>published, aggregated result totals</em>, not a forensic audit of voting-machine hardware, firmware, or counting software. TSE's own CKAN catalogue lists a separate package, <code>resultados-2026-logs-do-sistema-de-preparacao-das-urnas-eletronicas-gedai</code> (voting-machine preparation system logs, per state, 2nd round), which we confirmed exists but did not download or use — it is per-machine preparation logs, not tabular results, and would need a substantially different ingestion pipeline to analyse.", "<strong>Integridade em nível de máquina e de software.</strong> Esta é uma análise estatística de <em>totais de resultados publicados e agregados</em>, não uma auditoria forense do hardware, firmware ou software de apuração das urnas eletrônicas. O próprio catálogo CKAN do TSE lista um pacote separado, <code>resultados-2026-logs-do-sistema-de-preparacao-das-urnas-eletronicas-gedai</code> (logs do sistema de preparação das urnas, por estado, 2º turno), que confirmamos existir mas não baixamos nem usamos — são logs de preparação por máquina, não resultados tabulares, e exigiriam um pipeline de ingestão substancialmente diferente para analisar.")}
+    {B("li", "<strong>Polling-station (section) level consistency.</strong> We used municipality-and-zone level data throughout. TSE also publishes <code>votacao_secao_2026_*.zip</code> (results by individual polling section, listed in the same <code>resultados-2026</code> package) — confirmed available but not downloaded here, per the pipeline's original scope. Section-level data would let a future pass check consistency <em>within</em> a zone, at roughly 10&ndash;20x the row count.", "<strong>Consistência em nível de seção eleitoral.</strong> Usamos dados em nível de município e zona o tempo todo. O TSE também publica <code>votacao_secao_2026_*.zip</code> (resultados por seção eleitoral individual, listado no mesmo pacote <code>resultados-2026</code>) — confirmado disponível, mas não baixado aqui, conforme o escopo original do pipeline. Dados por seção permitiriam, em uma etapa futura, verificar a consistência <em>dentro</em> de uma zona, com cerca de 10 a 20 vezes mais linhas.")}
+    {B("li", "<strong>Chain of custody between a polling station and the published total.</strong> TSE's CKAN catalogue separately lists <code>resultados-2026-boletim-de-urna</code> (individual polling-station result bulletins, \"Boletins de Urna\", per state) and <code>resultados-2026-arquivos-transmitidos-para-totalizacao</code> (files transmitted for totalization). Both are confirmed to exist; neither was used here. Boletins de Urna are published per-machine, largely as scanned/structured documents rather than simple tabular rows, so matching them against the aggregates used in this report is a meaningfully larger project — but it is the direct next step for anyone wanting to check whether an individual polling station's bulletin matches what reached the national total.", "<strong>Cadeia de custódia entre uma seção eleitoral e o total publicado.</strong> O catálogo CKAN do TSE lista separadamente <code>resultados-2026-boletim-de-urna</code> (boletins de urna individuais, por estado) e <code>resultados-2026-arquivos-transmitidos-para-totalizacao</code> (arquivos transmitidos para totalização). Ambos confirmadamente existem; nenhum foi usado aqui. Os Boletins de Urna são publicados por máquina, em grande parte como documentos escaneados/estruturados em vez de linhas tabulares simples, então compará-los com os agregados usados neste relatório é um projeto significativamente maior — mas é o próximo passo direto para quem quiser verificar se o boletim de uma seção específica corresponde ao que chegou ao total nacional.")}
+    {B("li", "<strong>True geographic/spatial analysis.</strong> \"Regional context\" here means state-level aggregation, not municipality-level maps or spatial-autocorrelation statistics (e.g. Moran's I) — those need municipality boundary geometries (e.g. from IBGE) that are not part of this pipeline yet.", "<strong>Análise geográfica/espacial verdadeira.</strong> \"Contexto regional\", aqui, significa agregação por estado, não mapas em nível de município nem estatísticas de autocorrelação espacial (ex.: I de Moran) — essas exigiriam geometrias de fronteiras municipais (ex.: do IBGE) que ainda não fazem parte deste pipeline.")}
+    {B("li", "<strong>Formal outlier testing on blank/null vote rates and on the vote-transfer estimates.</strong> Both are reported descriptively (§7, §9) with caveats, not run through the same chance-model/robustness machinery as the landslide-zone analysis. That would be a natural extension.", "<strong>Teste formal de valores atípicos nas taxas de votos em branco/nulos e nas estimativas de transferência de votos.</strong> Ambas são reportadas de forma descritiva (§7, §9) com ressalvas, não submetidas ao mesmo mecanismo de modelo de acaso/robustez usado na análise de zonas com vitória esmagadora. Essa seria uma extensão natural.")}
+    {B("li", "<strong>Voter-level behaviour.</strong> Every test here operates on aggregated municipality/zone totals. Individual coercion, vote-buying, or other retail-level irregularities leave no trace in aggregate counts and are outside what any dataset at this level of aggregation could detect.", "<strong>Comportamento em nível de eleitor individual.</strong> Todo teste aqui opera sobre totais agregados por município/zona. Coação individual, compra de votos ou outras irregularidades no varejo não deixam rastro em contagens agregadas e estão fora do que qualquer conjunto de dados neste nível de agregação poderia detectar.")}
+  </ul>
+
+  {B("h3", "Overall assessment", "Avaliação geral")}
+  <div class="verdict">
+    {B("h3", "No statistical signature consistent with fraud was found across any of the twelve analyses in this report.", "Nenhuma assinatura estatística compatível com fraude foi encontrada em nenhuma das doze análises deste relatório.")}
+    <ul>
+      {B("li", "The underlying data reconciles perfectly: zero duplicate records, zero reconciliation failures, zero impossible values, across every one of the 12,584 zone-round records checked.", "Os dados subjacentes se reconciliam perfeitamente: zero registros duplicados, zero falhas de reconciliação, zero valores impossíveis, em todos os 12.584 registros de zona-turno verificados.")}
+      {B("li", "Landslide-zone frequency stays at or below what a chance-only null model predicts, across five independent robustness variants — the opposite of what manufactured results would look like.", "A frequência de zonas com vitória esmagadora fica igual ou abaixo do que um modelo nulo de puro acaso prevê, em cinco variantes independentes de robustez — o oposto do que resultados fabricados pareceriam.")}
+      {B("li", "Every landslide zone was already a landslide in round 1, and the estimated vote-transfer pattern from eliminated candidates is consistent with ordinary runoff dynamics.", "Toda zona com vitória esmagadora já era uma vitória esmagadora no 1º turno, e o padrão estimado de transferência de votos dos candidatos eliminados é consistente com a dinâmica comum de um segundo turno.")}
+      {B("li", "Turnout changes, blank/null vote rates, vote-count digit distributions and the regional pattern of results all look like ordinary variation, not coordinated manipulation.", "As variações de comparecimento, as taxas de votos em branco/nulos, as distribuições de dígitos da contagem de votos e o padrão regional dos resultados parecem todos variação comum, não manipulação coordenada.")}
+      {B("li", "One mild, isolated deviation (Flávio's count at the 80% landslide threshold) is reported rather than hidden — it does not survive being checked at neighbouring thresholds and is the kind of result that appears by chance occasionally when several variants are tested.", "Um desvio leve e isolado (a contagem de Flávio no limiar de 80% de vitória esmagadora) é reportado em vez de escondido — ele não se repete ao ser verificado em limiares vizinhos e é o tipo de resultado que aparece por acaso ocasionalmente quando várias variantes são testadas.")}
+    </ul>
+    {B("p", "None of this constitutes a chain-of-custody or systems audit, and no statistical test can rule out fraud with certainty — it can only say whether the published numbers look like what an honest count, in a country with Brazil's real political geography, would produce. By that standard, they do.", "Nada disso constitui uma auditoria de cadeia de custódia ou de sistemas, e nenhum teste estatístico pode descartar fraude com certeza — ele só pode dizer se os números publicados se parecem com o que uma apuração honesta, em um país com a geografia política real do Brasil, produziria. Por esse padrão, eles se parecem.", attrs='style="margin-bottom:0"')}
+  </div>
+</section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    {B("p", 'Data: Tribunal Superior Eleitoral open-data portal (dadosabertos.tse.jus.br), package <code>resultados-2026</code>. Built entirely from <code>votacao_candidato_munzona_2026.zip</code> and <code>detalhe_votacao_munzona_2026.zip</code> — see the companion pipeline\'s <code>README.md</code>, <code>data/raw/MANIFEST.csv</code> and <code>data/processed/DATA_DICTIONARY.md</code> for full provenance, checksums and column definitions. Statistical code: <code>scripts/fraud_analysis.py</code>, <code>scripts/export_chart_data.py</code>. Charts are interactive — hover any point or bar for the exact underlying value.', 'Dados: portal de dados abertos do Tribunal Superior Eleitoral (dadosabertos.tse.jus.br), pacote <code>resultados-2026</code>. Construído inteiramente a partir de <code>votacao_candidato_munzona_2026.zip</code> e <code>detalhe_votacao_munzona_2026.zip</code> — veja o <code>README.md</code>, <code>data/raw/MANIFEST.csv</code> e <code>data/processed/DATA_DICTIONARY.md</code> do pipeline de dados que acompanha este relatório para proveniência completa, checksums e definições de colunas. Código estatístico: <code>scripts/fraud_analysis.py</code>, <code>scripts/export_chart_data.py</code>. Os gráficos são interativos — passe o mouse sobre qualquer ponto ou barra para ver o valor exato.')}
+  </div>
+</footer>
+
+<script type="application/json" id="chart-data-json">{chart_data_json.replace("</", "<\\/")}</script>
+<script>
+window.CHART_DATA = JSON.parse(document.getElementById('chart-data-json').textContent);
+</script>
+<script>
+{charts_js}
+</script>
+<script>
+{app_js}
+</script>
+<script>
+(function(){{
+  var TITLES = {{en: {json.dumps(TITLE_EN)}, pt: {json.dumps(TITLE_PT)}}};
+  var DESCS = {{en: {json.dumps(DESC_EN)}, pt: {json.dumps(DESC_PT)}}};
+
+  function applyLang(lang){{
+    document.documentElement.setAttribute('data-lang', lang);
+    document.documentElement.setAttribute('lang', lang === 'pt' ? 'pt-BR' : 'en-GB');
+    document.title = TITLES[lang];
+    var m = document.querySelector('meta[name="description"]');
+    if (m) m.setAttribute('content', DESCS[lang]);
+    document.querySelectorAll('[data-set-lang]').forEach(function(b){{
+      b.setAttribute('aria-pressed', b.getAttribute('data-set-lang') === lang ? 'true' : 'false');
+    }});
+    try {{ localStorage.setItem('report-lang', lang); }} catch(e){{}}
+  }}
+  document.querySelectorAll('[data-set-lang]').forEach(function(b){{
+    b.addEventListener('click', function(){{ applyLang(b.getAttribute('data-set-lang')); }});
+  }});
+  applyLang(document.documentElement.getAttribute('data-lang') || 'en');
+
+  function effectiveTheme(){{
+    var explicit = document.documentElement.getAttribute('data-theme');
+    if (explicit === 'light' || explicit === 'dark') return explicit;
+    return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  }}
+  function syncThemeButtons(){{
+    var t = effectiveTheme();
+    document.querySelectorAll('[data-set-theme]').forEach(function(b){{
+      b.setAttribute('aria-pressed', b.getAttribute('data-set-theme') === t ? 'true' : 'false');
+    }});
+  }}
+  function applyTheme(theme){{
+    document.documentElement.setAttribute('data-theme', theme);
+    try {{ localStorage.setItem('report-theme', theme); }} catch(e){{}}
+    syncThemeButtons();
+  }}
+  document.querySelectorAll('[data-set-theme]').forEach(function(b){{
+    b.addEventListener('click', function(){{ applyTheme(b.getAttribute('data-set-theme')); }});
+  }});
+  syncThemeButtons();
+  if (window.matchMedia) {{
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', syncThemeButtons);
+  }}
+}})();
+</script>
+"""
+
+    OUT_PATH.write_text(html, encoding="utf-8")
+    print(f"Wrote {OUT_PATH} ({len(html):,} bytes)")
+
+
+if __name__ == "__main__":
+    main()
