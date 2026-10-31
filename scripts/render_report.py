@@ -298,7 +298,6 @@ h1.title {{
 .dek {{
   font-size: 1.15rem;
   color: var(--text-secondary);
-  max-width: 62ch;
   text-wrap: balance;
 }}
 .meta-row {{
@@ -316,8 +315,8 @@ h2 {{
 }}
 h2 .num {{ color: var(--accent); font-family: var(--mono); font-size: 0.85em; margin-right: 10px; }}
 h3 {{ font-family: var(--serif); font-size: 1.2rem; margin: 28px 0 8px; font-weight: 600; }}
-p {{ margin: 12px 0; max-width: 72ch; }}
-.lede {{ color: var(--text-secondary); font-size: 1.02rem; max-width: 68ch; }}
+p {{ margin: 12px 0; }}
+.lede {{ color: var(--text-secondary); font-size: 1.02rem; }}
 strong {{ font-weight: 650; }}
 a {{ color: var(--accent); }}
 
@@ -450,7 +449,7 @@ tr:hover td {{ background: var(--surface-1); }}
 .pill-b {{ background: var(--warn-bg); color: var(--warn-text); }}
 .pill-d {{ background: var(--surface-1); color: var(--text-muted); }}
 
-.checklist {{ list-style: none; padding: 0; margin: 20px 0; max-width: 72ch; }}
+.checklist {{ list-style: none; padding: 0; margin: 20px 0; }}
 .checklist li {{
   position: relative; padding: 6px 0 6px 30px; margin: 4px 0;
   border-bottom: 1px solid var(--border);
@@ -783,7 +782,7 @@ code {{ font-family: var(--mono); background: var(--surface-1); padding: 1px 5px
   {B("p", "Classification follows a standard election-audit taxonomy: <strong>A</strong> data inconsistency (a verifiable mismatch or failure), <strong>B</strong> statistical anomaly (unusual under a clearly defined comparison), <strong>C</strong> technical irregularity requiring further investigation, <strong>D</strong> unsubstantiated allegation (insufficient evidence either way), <strong>E</strong> no anomaly detected. None of these findings is classified as a fraud probability — that classification does not exist in this framework, deliberately.", "A classificação segue uma taxonomia padrão de auditoria eleitoral: <strong>A</strong> inconsistência de dados (uma divergência ou falha verificável), <strong>B</strong> anomalia estatística (incomum sob uma comparação claramente definida), <strong>C</strong> irregularidade técnica que exige investigação adicional, <strong>D</strong> alegação não comprovada (evidência insuficiente em qualquer direção), <strong>E</strong> nenhuma anomalia detectada. Nenhum desses achados é classificado como uma \"probabilidade de fraude\" — essa categoria não existe neste framework, deliberadamente.")}
 
   {B("h3", "What this analysis does <em>not</em> establish — and what would be needed", "O que esta análise <em>não</em> comprova — e o que seria necessário")}
-  <ul style="max-width:72ch">
+  <ul>
     {B("li", "<strong>Machine- and software-level integrity.</strong> This is a statistical analysis of <em>published, aggregated result totals</em>, not a forensic audit of voting-machine hardware, firmware, or counting software. TSE's own CKAN catalogue lists a separate package, <code>resultados-2026-logs-do-sistema-de-preparacao-das-urnas-eletronicas-gedai</code> (voting-machine preparation system logs, per state, 2nd round), which we confirmed exists but did not download or use — it is per-machine preparation logs, not tabular results, and would need a substantially different ingestion pipeline to analyse.", "<strong>Integridade em nível de máquina e de software.</strong> Esta é uma análise estatística de <em>totais de resultados publicados e agregados</em>, não uma auditoria forense do hardware, firmware ou software de apuração das urnas eletrônicas. O próprio catálogo CKAN do TSE lista um pacote separado, <code>resultados-2026-logs-do-sistema-de-preparacao-das-urnas-eletronicas-gedai</code> (logs do sistema de preparação das urnas, por estado, 2º turno), que confirmamos existir mas não baixamos nem usamos — são logs de preparação por máquina, não resultados tabulares, e exigiriam um pipeline de ingestão substancialmente diferente para analisar.")}
     {B("li", "<strong>Polling-station (section) level consistency.</strong> We used municipality-and-zone level data throughout. TSE also publishes <code>votacao_secao_2026_*.zip</code> (results by individual polling section, listed in the same <code>resultados-2026</code> package) — confirmed available but not downloaded here, per the pipeline's original scope. Section-level data would let a future pass check consistency <em>within</em> a zone, at roughly 10&ndash;20x the row count.", "<strong>Consistência em nível de seção eleitoral.</strong> Usamos dados em nível de município e zona o tempo todo. O TSE também publica <code>votacao_secao_2026_*.zip</code> (resultados por seção eleitoral individual, listado no mesmo pacote <code>resultados-2026</code>) — confirmado disponível, mas não baixado aqui, conforme o escopo original do pipeline. Dados por seção permitiriam, em uma etapa futura, verificar a consistência <em>dentro</em> de uma zona, com cerca de 10 a 20 vezes mais linhas.")}
     {B("li", "<strong>Chain of custody between a polling station and the published total.</strong> TSE's CKAN catalogue separately lists <code>resultados-2026-boletim-de-urna</code> (individual polling-station result bulletins, \"Boletins de Urna\", per state) and <code>resultados-2026-arquivos-transmitidos-para-totalizacao</code> (files transmitted for totalization). Both are confirmed to exist; neither was used here. Boletins de Urna are published per-machine, largely as scanned/structured documents rather than simple tabular rows, so matching them against the aggregates used in this report is a meaningfully larger project — but it is the direct next step for anyone wanting to check whether an individual polling station's bulletin matches what reached the national total.", "<strong>Cadeia de custódia entre uma seção eleitoral e o total publicado.</strong> O catálogo CKAN do TSE lista separadamente <code>resultados-2026-boletim-de-urna</code> (boletins de urna individuais, por estado) e <code>resultados-2026-arquivos-transmitidos-para-totalizacao</code> (arquivos transmitidos para totalização). Ambos confirmadamente existem; nenhum foi usado aqui. Os Boletins de Urna são publicados por máquina, em grande parte como documentos escaneados/estruturados em vez de linhas tabulares simples, então compará-los com os agregados usados neste relatório é um projeto significativamente maior — mas é o próximo passo direto para quem quiser verificar se o boletim de uma seção específica corresponde ao que chegou ao total nacional.")}
