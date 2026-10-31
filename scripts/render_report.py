@@ -564,7 +564,7 @@ code {{ font-family: var(--mono); background: var(--surface-1); padding: 1px 5px
   {B("p", f"Out of {fnum(summary['n_total_zones_r2'],'en')} electoral zones that reported a presidential vote in round 2, <strong>{summary['n_lula_ge90']} zones ({pct(summary['pct_lula_ge90'],'en',2)}%)</strong> gave Lula 90% + of the two-candidate vote, and <strong>{summary['n_flavio_ge90']} zones ({pct(summary['pct_flavio_ge90'],'en',2)}%)</strong> gave Flávio Bolsonaro 90% +. Is that a lot?", f"Das {fnum(summary['n_total_zones_r2'],'pt')} zonas eleitorais que registraram votos para presidente no 2º turno, <strong>{summary['n_lula_ge90']} zonas ({pct(summary['pct_lula_ge90'],'pt',2)}%)</strong> deram a Lula 90%+ dos votos entre os dois candidatos, e <strong>{summary['n_flavio_ge90']} zonas ({pct(summary['pct_flavio_ge90'],'pt',2)}%)</strong> deram a Flávio Bolsonaro 90%+. Isso é muito?", cls="lede")}
 
   <div class="exhibit">
-    <div id="chart-zone-hist" class="chart-container" style="min-height:420px"></div>
+    <div id="chart-zone-hist" class="chart-container" style="flex:1"></div>
     {B("div", "Figure 2. The full distribution of round-2 results across every zone. Hover a bar for the exact count. High-concentration zones are the small tail beyond the markers — a tiny fraction of a broad, smooth distribution, not a separate spike.", "Figura 2. A distribuição completa dos resultados do 2º turno em todas as zonas. Passe o mouse sobre uma barra para ver a contagem exata. As zonas de alta concentração são a pequena cauda além dos marcadores — uma fração ínfima de uma distribuição ampla e suave, não um pico isolado.", cls="cap")}
   </div>
 
