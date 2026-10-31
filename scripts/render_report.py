@@ -543,8 +543,8 @@ code {{ font-family: var(--mono); background: var(--surface-1); padding: 1px 5px
 
   <div class="exhibit">
     <div class="chart-row">
-      <div id="chart-national-r1" class="chart-container" style="flex:1.3;min-height:380px"></div>
-      <div id="chart-national-r2" class="chart-container" style="flex:1;min-height:380px"></div>
+      <div id="chart-national-r1" class="chart-container" style="flex:1.3"></div>
+      <div id="chart-national-r2" class="chart-container" style="flex:1"></div>
     </div>
     {B("div", f"Figure 1. Round-1 result (all {summary['n_round1_candidates']} candidates) and the official round-2 result. Hover any bar for the exact share. Flávio led round 1 by 1.8 points; Lula's two-candidate share in round 1 was {pct(nat['lula_r1_twoparty_pct'],'en')}%, rising to {pct(nat['lula_r2_pct'],'en')}% in round 2.", f"Figura 1. Resultado do 1º turno (todos os {summary['n_round1_candidates']} candidatos) e o resultado oficial do 2º turno. Passe o mouse sobre qualquer barra para ver o percentual exato. Flávio liderou o 1º turno por 1,8 ponto; o percentual de Lula frente a Flávio no 1º turno era de {pct(nat['lula_r1_twoparty_pct'],'pt')}%, subindo para {pct(nat['lula_r2_pct'],'pt')}% no 2º turno.", cls="cap")}
   </div>
@@ -607,8 +607,8 @@ code {{ font-family: var(--mono); background: var(--surface-1); padding: 1px 5px
 
   <div class="exhibit">
     <div class="chart-row">
-      <div id="chart-mc-lula" class="chart-container" style="flex:1;min-height:360px"></div>
-      <div id="chart-mc-flavio" class="chart-container" style="flex:1;min-height:360px"></div>
+      <div id="chart-mc-lula" class="chart-container" style="flex:1"></div>
+      <div id="chart-mc-flavio" class="chart-container" style="flex:1"></div>
     </div>
     {B("div", f"Figure 4. Each histogram is {fnum(mc['n_sim'],'en')} simulated elections under the chance-only null model; hover a bar for the exact trial count. The vertical line is what actually happened.", f"Figura 4. Cada histograma representa {fnum(mc['n_sim'],'pt')} eleições simuladas sob o modelo nulo de puro acaso; passe o mouse sobre uma barra para ver a contagem exata de simulações. A linha vertical é o que realmente aconteceu.", cls="cap")}
   </div>
@@ -692,8 +692,8 @@ code {{ font-family: var(--mono); background: var(--surface-1); padding: 1px 5px
 
   <div class="exhibit">
     <div class="chart-row">
-      <div id="chart-swing-hist" class="chart-container" style="flex:1;min-height:380px"></div>
-      <div id="chart-swing-scatter" class="chart-container" style="flex:1;min-height:380px"></div>
+      <div id="chart-swing-hist" class="chart-container" style="flex:1"></div>
+      <div id="chart-swing-scatter" class="chart-container" style="flex:1"></div>
     </div>
     {B("div", f'Figure 6. Left: the distribution of zone-level swing to Lula is narrow and centered near the national average ({pct(nat["swing_pts"],"en",2)} pts), with no fat tail — hover a bar for the exact count. Right: turnout-rate change vs. swing to Lula, zone level (<span id="swing-corr-caption-en"></span>) — hover a point for that zone.', f'Figura 6. Esquerda: a distribuição da variação para Lula por zona é estreita e centrada perto da média nacional ({pct(nat["swing_pts"],"pt",2)} pts), sem cauda pesada — passe o mouse sobre uma barra para ver a contagem exata. Direita: variação na taxa de comparecimento vs. variação para Lula, por zona (<span id="swing-corr-caption-pt"></span>) — passe o mouse sobre um ponto para ver essa zona.', cls="cap")}
   </div>
@@ -721,8 +721,8 @@ code {{ font-family: var(--mono); background: var(--surface-1); padding: 1px 5px
 
   <div class="exhibit">
     <div class="chart-row">
-      <div id="chart-digit-lula" class="chart-container" style="flex:1;min-height:340px"></div>
-      <div id="chart-digit-flavio" class="chart-container" style="flex:1;min-height:340px"></div>
+      <div id="chart-digit-lula" class="chart-container" style="flex:1"></div>
+      <div id="chart-digit-flavio" class="chart-container" style="flex:1"></div>
     </div>
     {B("div", "Figure 7. Last-digit frequency of zone-level vote counts (minimum count of 10 to avoid trivial small-number bias), against the uniform expectation (dashed line). Hover a bar for the exact count.", "Figura 7. Frequência do último dígito da contagem de votos por zona (contagem mínima de 10 para evitar viés trivial de números pequenos), contra a expectativa uniforme (linha tracejada). Passe o mouse sobre uma barra para ver a contagem exata.", cls="cap")}
   </div>
