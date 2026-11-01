@@ -267,6 +267,9 @@
     (opts.hlines || []).forEach((hl) => {
       g.appendChild(el("line", { x1: 0, x2: innerW, y1: yScale(hl.y), y2: yScale(hl.y), class: hl.cls || "refline" }));
     });
+    (opts.vlines || []).forEach((vl) => {
+      g.appendChild(el("line", { x1: xScale(vl.x), x2: xScale(vl.x), y1: 0, y2: innerH, class: vl.cls || "refline" }));
+    });
     if (opts.diagonal) {
       g.appendChild(
         el("line", {

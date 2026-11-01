@@ -9,7 +9,15 @@
   const [UF, MUN, ZONA, ABROAD, N, P2, P1, DTURN, SWING, N1] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
   let funnelHandle = null; // set by renderFunnel(); used by the Figure 3 search box
   let r1vsr2Handle = null; // set by renderR1vsR2(); used by the Figure 5 search box
+  let swingHandle = null; // set by renderSwing(); used by the Figure 7 search box
   let captureHandle = null; // set by renderCapture(); used by the Figure 11 search box
+
+  // Deterministic filter shared by the turnout-vs-swing scatter (Fig 7) and
+  // its search box, so the search index lines up 1:1 with the chart's point
+  // index (same pattern as captureData() below for Fig 11).
+  function swingSample() {
+    return D.zones.filter((z) => z[DTURN] !== null && z[SWING] !== null);
+  }
 
   const I18N = {
     en: {
@@ -441,24 +449,24 @@
     const meanBin = Math.round((mean - lo) / binW);
     const bars = counts.map((c, i) => ({ key: i, label: i % 10 === 0 ? (lo + i * binW).toFixed(0) : "", value: c, color: CL.accent, lo: lo + i * binW, hi: lo + (i + 1) * binW }));
     C.renderBars("chart-swing-hist", bars, {
-      width: 460,
-      height: 380,
+      width: 780,
+      height: 340,
       valueLabel: S.swing.valueLabel,
       categoryLabel: S.swing.categoryLabel,
       tooltipFn: (b) => ({ title: S.swing.binRangePts(b.lo.toFixed(1), b.hi.toFixed(1)), rows: [{ label: S.swing.zones, value: C.fmtInt(b.value, locale), color: CL.accent }] }),
       markers: [{ key: meanBin, label: S.swing.meanMarker(mean.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })), color: C.COLOR.textStrong(), align: "left" }],
     });
 
-    const sample = D.zones.filter((z) => z[DTURN] !== null && z[SWING] !== null);
+    const sample = swingSample();
     const xs = sample.map((z) => z[DTURN] * 100);
     const ys = sample.map((z) => z[SWING] * 100);
     const r = C.pearsonR(xs, ys);
     const { slope, intercept } = C.linreg(xs, ys);
     const xDomain = [Math.min(...xs), Math.max(...xs)];
     const points = sample.map((z, i) => ({ x: xs[i], y: ys[i], color: CL.muted, op: 0.25, r: 1.8, meta: z }));
-    C.renderScatter("chart-swing-scatter", points, {
-      width: 460,
-      height: 380,
+    swingHandle = C.renderScatter("chart-swing-scatter", points, {
+      width: 780,
+      height: 400,
       margin: { top: 28, right: 20, bottom: 50, left: 56 },
       xType: "linear",
       xDomain,
@@ -467,6 +475,7 @@
       yLabel: S.swing.yLabel,
       xTickFormat: (v) => v.toFixed(0),
       yTickFormat: (v) => v.toFixed(0),
+      vlines: [{ x: 0, cls: "refline-dotted" }],
       lineSegments: [{ x1: xDomain[0], y1: slope * xDomain[0] + intercept, x2: xDomain[1], y2: slope * xDomain[1] + intercept, cls: "trendline" }],
       hitRadius: 14,
       tooltipFn: (p) => {
@@ -917,7 +926,7 @@
     // rebuilt (new highlight circle, new handle), so any previous
     // selection no longer points at anything real -- reset the search
     // UI to match.
-    ["funnel", "r1vsr2", "capture"].forEach((idPrefix) => {
+    ["funnel", "r1vsr2", "swing", "capture"].forEach((idPrefix) => {
       const searchInput = document.getElementById(`${idPrefix}-search-input`);
       const searchClear = document.getElementById(`${idPrefix}-search-clear`);
       if (searchInput) {
@@ -949,6 +958,12 @@
     zones: D.zones.filter((z) => z[P1] !== null),
     chartContainerId: "chart-r1-vs-r2",
     getHandle: () => r1vsr2Handle,
+  });
+  setupChartSearch({
+    idPrefix: "swing",
+    zones: swingSample(),
+    chartContainerId: "chart-swing-scatter",
+    getHandle: () => swingHandle,
   });
   setupChartSearch({
     idPrefix: "capture",

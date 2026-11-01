@@ -852,11 +852,19 @@ td.winner-cell {{ text-align: center; }}
   {B("p", "One pattern sometimes associated with ballot stuffing is incremental turnout between rounds flowing almost entirely to one candidate — i.e. a strong correlation between the change in turnout rate and the swing toward a candidate. We tested this directly across all zones.", "Um padrão às vezes associado a fraude de urna é o comparecimento incremental entre os turnos fluindo quase inteiramente para um candidato — ou seja, uma forte correlação entre a variação na taxa de comparecimento e a variação a favor de um candidato. Testamos isso diretamente em todas as zonas.", cls="lede")}
 
   <div class="exhibit">
-    <div class="chart-row">
-      <div id="chart-swing-hist" class="chart-container" style="flex:1"></div>
-      <div id="chart-swing-scatter" class="chart-container" style="flex:1"></div>
+    <div>
+      {B("div", "Distribution of zone-level vote swing", "Distribuição da variação de votos por zona", cls="chart-subtitle")}
+      <div id="chart-swing-hist" class="chart-container"></div>
+      {B("div", "Turnout-rate change vs. that swing, by zone", "Variação do comparecimento vs. essa variação, por zona", cls="chart-subtitle", attrs='style="margin-top:18px"')}
+      <div class="chart-search" id="swing-search">
+        <svg class="chart-search-icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5.2" fill="none" stroke="currentColor" stroke-width="1.4"/><line x1="11" y1="11" x2="15" y2="15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <input type="text" id="swing-search-input" class="chart-search-input" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="swing-search-results" aria-autocomplete="list">
+        <button type="button" id="swing-search-clear" class="chart-search-clear" hidden>&times;</button>
+        <ul id="swing-search-results" class="chart-search-results" role="listbox" hidden></ul>
+      </div>
+      <div id="chart-swing-scatter" class="chart-container"></div>
     </div>
-    {B("div", f'Figure 7. Left: the distribution of zone-level vote swing between the two candidates is narrow and centred near the national average ({pct(nat["swing_pts"],"en",2)} pts toward Lula / away from Flávio), with no fat tail — hover or tap a bar for the exact count. Right: turnout-rate change vs. that swing, zone level (<span id="swing-corr-caption-en"></span>) — a flat, shapeless cloud, hover or tap a point for that zone.', f'Figura 7. Esquerda: a distribuição da variação de votos entre os dois candidatos por zona é estreita e centrada perto da média nacional ({pct(nat["swing_pts"],"pt",2)} pts a favor de Lula / contra Flávio), sem cauda pesada — passe o mouse ou toque em uma barra para ver a contagem exata. Direita: variação na taxa de comparecimento vs. essa variação, por zona (<span id="swing-corr-caption-pt"></span>) — uma nuvem plana e sem forma; passe o mouse ou toque em um ponto para ver essa zona.', cls="cap")}
+    {B("div", f'Figure 7. Top: the distribution of zone-level vote swing between the two candidates is narrow and centred near the national average ({pct(nat["swing_pts"],"en",2)} pts toward Lula / away from Flávio), with no fat tail — hover or tap a bar for the exact count. Bottom: turnout-rate change vs. that swing, zone level (<span id="swing-corr-caption-en"></span>) — a flat, shapeless cloud either side of the dotted line marking no turnout change, hover or tap a point for that zone, or use the search box to jump to a municipality.', f'Figura 7. Em cima: a distribuição da variação de votos entre os dois candidatos por zona é estreita e centrada perto da média nacional ({pct(nat["swing_pts"],"pt",2)} pts a favor de Lula / contra Flávio), sem cauda pesada — passe o mouse ou toque em uma barra para ver a contagem exata. Em baixo: variação na taxa de comparecimento vs. essa variação, por zona (<span id="swing-corr-caption-pt"></span>) — uma nuvem plana e sem forma dos dois lados da linha pontilhada que marca a ausência de variação no comparecimento; passe o mouse ou toque em um ponto para ver essa zona, ou use a busca para ir direto a um município.', cls="cap")}
   </div>
 
   <div class="callout {corr_cls}">
