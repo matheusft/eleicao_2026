@@ -6,7 +6,7 @@
   "use strict";
   const C = window.ReportCharts;
   const D = window.CHART_DATA;
-  const [UF, MUN, ZONA, ABROAD, N, P2, P1, DTURN, SWING] = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+  const [UF, MUN, ZONA, ABROAD, N, P2, P1, DTURN, SWING, N1] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
   let funnelHandle = null; // set by renderFunnel(); used by the Figure 3 search box
   let r1vsr2Handle = null; // set by renderR1vsR2(); used by the Figure 5 search box
 
@@ -37,17 +37,12 @@
         yLabel: "Lula's share of the two-candidate vote (%)",
         legendOther: "All other zones",
         legendLandslide: "≥90% for one candidate",
-        zone: "Zone",
-        twoCandVotes: "Two-candidate votes",
-        lulaR2: "Lula's share (R2)",
-        lulaR1: "Lula's share (R1)",
+        votes: "Votes (R1→R2)",
       },
       r1vsr2: {
         xLabel: "Lula's 2-candidate share in round 1 (%)",
         yLabel: "Lula's share in round 2 (%)",
-        zone: "Zone",
-        r1share: "Round 1 share",
-        r2share: "Round 2 share",
+        votes: "Votes (R1→R2)",
         swing: "Swing",
       },
       swing: {
@@ -139,17 +134,12 @@
         yLabel: "Percentual de Lula no total de dois candidatos (%)",
         legendOther: "Todas as outras zonas",
         legendLandslide: "≥90% para um candidato",
-        zone: "Zona",
-        twoCandVotes: "Votos (2 candidatos)",
-        lulaR2: "Percentual de Lula (2T)",
-        lulaR1: "Percentual de Lula (1T)",
+        votes: "Votos (1T→2T)",
       },
       r1vsr2: {
         xLabel: "Percentual de Lula (2 candidatos) no 1º turno (%)",
         yLabel: "Percentual de Lula no 2º turno (%)",
-        zone: "Zona",
-        r1share: "Percentual no 1º turno",
-        r2share: "Percentual no 2º turno",
+        votes: "Votos (1T→2T)",
         swing: "Variação",
       },
       swing: {
@@ -233,6 +223,23 @@
 
   function zoneTitle(z, S) {
     return `${z[MUN]}${z[ABROAD] ? S.abroadTag : ""} / ${z[UF]}`;
+  }
+
+  // Compact per-zone tooltip rows shared by the funnel (Fig 3) and the
+  // round-1-vs-round-2 scatter (Fig 5): each candidate's two-candidate share
+  // and the zone's total votes, shown as a round-1 → round-2 progression
+  // (just the round-2 value when the zone had no round-1 two-candidate vote).
+  function zoneShareRows(z, locale, votesLabel) {
+    const CL = col();
+    const p1 = z[P1], p2 = z[P2];
+    const hasR1 = p1 !== null && p1 !== undefined;
+    const pc = (v) => C.fmtPct(v * 100, 1, locale);
+    const prog = (a, b) => (hasR1 ? `${a} → ${b}` : b);
+    return [
+      { label: "Lula", value: prog(pc(p1), pc(p2)), color: CL.lula },
+      { label: "Flávio", value: prog(pc(1 - p1), pc(1 - p2)), color: CL.flavio },
+      { label: votesLabel, value: prog(C.fmtInt(z[N1], locale), C.fmtInt(z[N], locale)) },
+    ];
   }
 
   // ---------------- 1. National results ----------------
@@ -347,13 +354,7 @@
       ],
       tooltipFn: (p) => {
         const z = p.meta;
-        const rows = [
-          { label: S.funnel.zone, value: `#${z[ZONA]}` },
-          { label: S.funnel.twoCandVotes, value: C.fmtInt(z[N], locale) },
-          { label: S.funnel.lulaR2, value: C.fmtPct(z[P2] * 100, 2, locale), color: CL.lula },
-        ];
-        if (z[P1] !== null) rows.push({ label: S.funnel.lulaR1, value: C.fmtPct(z[P1] * 100, 2, locale) });
-        return { title: zoneTitle(z, S), rows };
+        return { title: `${zoneTitle(z, S)} · #${z[ZONA]}`, rows: zoneShareRows(z, locale, S.funnel.votes) };
       },
     });
   }
@@ -389,15 +390,9 @@
       diagonal: true,
       tooltipFn: (p) => {
         const z = p.meta;
-        return {
-          title: zoneTitle(z, S),
-          rows: [
-            { label: S.r1vsr2.zone, value: `#${z[ZONA]}` },
-            { label: S.r1vsr2.r1share, value: C.fmtPct(z[P1] * 100, 2, locale) },
-            { label: S.r1vsr2.r2share, value: C.fmtPct(z[P2] * 100, 2, locale), color: CL.lula },
-            { label: S.r1vsr2.swing, value: (z[SWING] >= 0 ? "+" : "") + C.fmtPct(z[SWING] * 100, 2, locale) },
-          ],
-        };
+        const rows = zoneShareRows(z, locale, S.r1vsr2.votes);
+        rows.push({ label: S.r1vsr2.swing, value: (z[SWING] >= 0 ? "+" : "") + C.fmtPct(z[SWING] * 100, 1, locale) });
+        return { title: `${zoneTitle(z, S)} · #${z[ZONA]}`, rows };
       },
     });
   }
