@@ -442,6 +442,35 @@
         t.textContent = m.label;
         g.appendChild(t);
       });
+      // Continuous-position markers (e.g. a simulated mean at a fractional
+      // count). `value` is in the same units as the bar keys; we map it onto
+      // the category axis using the first bar's key as the origin and bw as
+      // the per-unit step (bars are consecutive integer keys at centers).
+      (opts.refMarkers || []).forEach((m) => {
+        if (!bars.length) return;
+        const x = (m.value - bars[0].key + 0.5) * bw;
+        if (x < 0 || x > innerW) return;
+        g.appendChild(el("line", { x1: x, x2: x, y1: 0, y2: innerH, class: m.dashed ? "mark-line refline-dash" : "mark-line", stroke: m.color, "stroke-dasharray": m.dashed ? "4 3" : null }));
+        if (m.label) {
+          const t = el("text", { x: x + (m.align === "left" ? -6 : 6), y: m.labelY || 30, class: "mark-label", fill: m.color, "text-anchor": m.align === "left" ? "end" : "start" });
+          t.textContent = m.label;
+          g.appendChild(t);
+        }
+      });
+      // Shaded band across a continuous category range (e.g. the 90% range
+      // of a simulated null distribution), drawn behind the bars.
+      (opts.refBands || []).forEach((bnd) => {
+        if (!bars.length) return;
+        const x1 = (bnd.lo - bars[0].key) * bw + bw * (opts.gap || 0.06);
+        const x2 = (bnd.hi - bars[0].key + 1) * bw - bw * (opts.gap || 0.06);
+        const xa = Math.max(0, Math.min(x1, x2));
+        const xb = Math.min(innerW, Math.max(x1, x2));
+        if (xb <= xa) return;
+        g.insertBefore(
+          el("rect", { x: xa, y: 0, width: xb - xa, height: innerH, fill: bnd.color, "fill-opacity": bnd.opacity !== undefined ? bnd.opacity : 0.12 }),
+          g.firstChild
+        );
+      });
       if (opts.refLine !== undefined) {
         g.appendChild(el("line", { x1: 0, x2: innerW, y1: valScale(opts.refLine), y2: valScale(opts.refLine), class: "refline-dash" }));
       }
