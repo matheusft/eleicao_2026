@@ -57,9 +57,12 @@ def main() -> None:
             .sum()
         )
         pct = (100 * sub / sub.sum()).round(3)
+        # Each entry: [name, share-of-valid-votes (%), absolute vote count].
+        # The vote count lets the chart show both the share and the raw
+        # number of votes behind it in the tooltip.
         return [
-            [name.title(), float(v)]
-            for name, v in pct.sort_values(ascending=False).items()
+            [name.title(), float(pct[name]), int(sub[name])]
+            for name in pct.sort_values(ascending=False).index
         ]
 
     data = {
