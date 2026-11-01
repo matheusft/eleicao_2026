@@ -37,12 +37,12 @@
         yLabel: "Lula's share of the two-candidate vote (%)",
         legendOther: "All other zones",
         legendLandslide: "≥90% for one candidate",
-        votes: "Votes (R1→R2)",
+        votes: "Total votes",
       },
       r1vsr2: {
         xLabel: "Lula's 2-candidate share in round 1 (%)",
         yLabel: "Lula's share in round 2 (%)",
-        votes: "Votes (R1→R2)",
+        votes: "Total votes",
         swing: "Swing",
       },
       swing: {
@@ -134,12 +134,12 @@
         yLabel: "Percentual de Lula no total de dois candidatos (%)",
         legendOther: "Todas as outras zonas",
         legendLandslide: "≥90% para um candidato",
-        votes: "Votos (1T→2T)",
+        votes: "Total de votos",
       },
       r1vsr2: {
         xLabel: "Percentual de Lula (2 candidatos) no 1º turno (%)",
         yLabel: "Percentual de Lula no 2º turno (%)",
-        votes: "Votos (1T→2T)",
+        votes: "Total de votos",
         swing: "Variação",
       },
       swing: {
@@ -229,16 +229,22 @@
   // round-1-vs-round-2 scatter (Fig 5): each candidate's two-candidate share
   // and the zone's total votes, shown as a round-1 → round-2 progression
   // (just the round-2 value when the zone had no round-1 two-candidate vote).
-  function zoneShareRows(z, locale, votesLabel) {
+  function zoneShareRows(z, locale, totalLabel) {
     const CL = col();
     const p1 = z[P1], p2 = z[P2];
     const hasR1 = p1 !== null && p1 !== undefined;
+    const n1 = z[N1], n2 = z[N];
+    // Per-candidate counts derived from the (exact-to-rounding) share; Flávio
+    // is the remainder so the two always sum to the zone total.
+    const lula2 = Math.round(n2 * p2), lula1 = hasR1 ? Math.round(n1 * p1) : 0;
     const pc = (v) => C.fmtPct(v * 100, 1, locale);
-    const prog = (a, b) => (hasR1 ? `${a} → ${b}` : b);
+    const vi = (v) => C.fmtInt(v, locale);
+    const cell = (share, votes) => `${pc(share)} (${vi(votes)})`;
+    const prog = (r1, r2) => (hasR1 ? `${r1} → ${r2}` : r2);
     return [
-      { label: "Lula", value: prog(pc(p1), pc(p2)), color: CL.lula },
-      { label: "Flávio", value: prog(pc(1 - p1), pc(1 - p2)), color: CL.flavio },
-      { label: votesLabel, value: prog(C.fmtInt(z[N1], locale), C.fmtInt(z[N], locale)) },
+      { label: "Lula", value: prog(cell(p1, lula1), cell(p2, lula2)), color: CL.lula },
+      { label: "Flávio", value: prog(cell(1 - p1, n1 - lula1), cell(1 - p2, n2 - lula2)), color: CL.flavio },
+      { label: totalLabel, value: prog(vi(n1), vi(n2)) },
     ];
   }
 
