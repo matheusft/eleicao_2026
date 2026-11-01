@@ -543,7 +543,16 @@ def between_round_capture(z2: pd.DataFrame) -> dict:
     gain_vs_pool = dL[gpos] / np.where(pool_lula[gpos] > 0, pool_lula[gpos], np.nan)
 
     # Consolidation: Lula's share of the net gain vs how the zone leaned.
-    meaningful = net > 50
+    # "net" can collapse toward zero even in a zone with lots of real vote
+    # movement, whenever Lula's gain and Flavio's loss nearly cancel (large
+    # churn, small net) -- dL/net then explodes into a meaningless number
+    # (e.g. 900%+) despite net being individually above a plain absolute
+    # floor. Require net to also be a non-trivial share of the gross churn
+    # (|dL| + |dF|) so the ratio reflects real consolidation, not a small
+    # residue of two much larger, largely-offsetting swings.
+    churn = np.abs(dL) + np.abs(dF)
+    stability = np.divide(net, churn, out=np.ones_like(net), where=churn > 0)
+    meaningful = (net > 30) & (stability >= 0.25)
     share = np.clip(dL[meaningful] / net[meaningful], -0.5, 1.5)
     corr = float(np.corrcoef(lean[meaningful], share)[0, 1])
 

@@ -298,7 +298,7 @@
     });
 
     axisLabel(g, opts.xLabel, innerW / 2, innerH + 40);
-    axisLabel(g, opts.yLabel, -40, innerH / 2, true);
+    axisLabel(g, opts.yLabel, opts.yLabelOffset || -40, innerH / 2, true);
 
     if (opts.legend) {
       const lg = el("g", { transform: `translate(${innerW + 20}, 8)` });

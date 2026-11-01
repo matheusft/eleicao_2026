@@ -125,6 +125,7 @@
         other: "shared between them",
         total: "Total votes",
         share: "Lula's share of the gain",
+        offScale: "Off-scale — shown at the chart edge",
       },
     },
     pt: {
@@ -232,6 +233,7 @@
         other: "dividido entre os dois",
         total: "Total de votos",
         share: "Percentual do ganho para Lula",
+        offScale: "Fora da escala — exibido na borda do gráfico",
       },
     },
   };
@@ -720,6 +722,13 @@
       const dF = n2 * (1 - z[P2]) - n1 * (1 - z[P1]);
       const net = dL + dF;
       if (net <= 30) return; // ratio is meaningless for a handful of swing votes
+      const churn = Math.abs(dL) + Math.abs(dF);
+      // net can collapse toward zero even with plenty of real vote movement,
+      // whenever Lula's gain and Flavio's loss nearly cancel out -- dL/net
+      // then explodes (900%+) despite net clearing the floor above. Require
+      // net to also be a real share of the gross churn, not a small residue
+      // of two much larger, largely-offsetting swings.
+      if (churn > 0 && net / churn < 0.25) return;
       pts0.push({ z: z, dL: dL, dF: dF, lean: z[P1] * 100, share: (dL / net) * 100 });
     });
     return pts0;
@@ -728,11 +737,14 @@
   function renderCapture(S, locale) {
     const CL = col();
     const pts0 = captureData();
+    const CAP_LO = -30,
+      CAP_HI = 260;
     const points = pts0.map((p) => {
       const cap = p.share >= 100 ? "lula" : p.share <= 0 ? "flavio" : "other";
       return {
         x: p.lean,
-        y: Math.max(-50, Math.min(150, p.share)),
+        y: Math.max(CAP_LO, Math.min(CAP_HI, p.share)),
+        clamped: p.share < CAP_LO || p.share > CAP_HI,
         color: cap === "lula" ? CL.lula : cap === "flavio" ? CL.flavio : CL.muted,
         op: cap === "other" ? 0.22 : 0.8,
         r: cap === "other" ? 1.7 : 2.6,
@@ -742,10 +754,11 @@
     captureHandle = C.renderScatter("chart-capture", points, {
       width: 760,
       height: 460,
-      margin: { top: 16, right: 150, bottom: 50, left: 60 },
+      margin: { top: 16, right: 150, bottom: 50, left: 72 },
+      yLabelOffset: -54,
       xType: "linear",
       xDomain: [0, 100],
-      yDomain: [-55, 155],
+      yDomain: [CAP_LO - 5, CAP_HI + 5],
       xLabel: S.capture.xLabel,
       yLabel: S.capture.yLabel,
       xTickFormat: (v) => v + "%",
@@ -766,6 +779,7 @@
         // chart's own metric (Lula's share of the net between-round gain).
         const rows = zoneShareRows(z, locale, S.capture.total);
         rows.push({ label: S.capture.share, value: C.fmtPct(m.share, 0, locale) });
+        if (pt.clamped) rows.push({ label: S.capture.offScale, value: "" });
         return { title: `${zoneTitle(z, S)} · #${z[ZONA]}`, rows };
       },
     });
