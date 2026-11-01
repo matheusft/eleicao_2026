@@ -9,6 +9,7 @@
   const [UF, MUN, ZONA, ABROAD, N, P2, P1, DTURN, SWING, N1] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
   let funnelHandle = null; // set by renderFunnel(); used by the Figure 3 search box
   let r1vsr2Handle = null; // set by renderR1vsR2(); used by the Figure 5 search box
+  let captureHandle = null; // set by renderCapture(); used by the Figure 11 search box
 
   const I18N = {
     en: {
@@ -113,7 +114,7 @@
         lulaCap: "Lula got ≥100%",
         flavioCap: "Flávio got ≥100%",
         other: "shared between them",
-        lean: "Round-1 lean",
+        total: "Total votes",
         share: "Lula's share of the gain",
       },
     },
@@ -219,7 +220,7 @@
         lulaCap: "Lula ficou com ≥100%",
         flavioCap: "Flávio ficou com ≥100%",
         other: "dividido entre os dois",
-        lean: "Inclinação no 1º turno",
+        total: "Total de votos",
         share: "Percentual do ganho para Lula",
       },
     },
@@ -695,8 +696,9 @@
   // Lula, the more of the new votes he took — shows ordinary consolidation,
   // not a separate population. Points at/above 100% are "Lula got everything";
   // at/below 0% are "Flávio got everything".
-  function renderCapture(S, locale) {
-    const CL = col();
+  // Deterministic filter/compute shared by the chart and its search box, so
+  // the search index lines up 1:1 with the chart's point index.
+  function captureData() {
     const pts0 = [];
     D.zones.forEach((z) => {
       if (z[P1] === null || !(z[N1] > 0)) return;
@@ -707,6 +709,12 @@
       if (net <= 30) return; // ratio is meaningless for a handful of swing votes
       pts0.push({ z: z, dL: dL, dF: dF, lean: z[P1] * 100, share: (dL / net) * 100 });
     });
+    return pts0;
+  }
+
+  function renderCapture(S, locale) {
+    const CL = col();
+    const pts0 = captureData();
     const points = pts0.map((p) => {
       const cap = p.share >= 100 ? "lula" : p.share <= 0 ? "flavio" : "other";
       return {
@@ -718,7 +726,7 @@
         meta: p,
       };
     });
-    C.renderScatter("chart-capture", points, {
+    captureHandle = C.renderScatter("chart-capture", points, {
       width: 760,
       height: 460,
       margin: { top: 16, right: 150, bottom: 50, left: 60 },
@@ -741,15 +749,11 @@
       ],
       tooltipFn: (pt) => {
         const m = pt.meta, z = m.z;
-        return {
-          title: `${zoneTitle(z, S)} · #${z[ZONA]}`,
-          rows: [
-            { label: S.capture.lean, value: C.fmtPct(m.lean, 0, locale) },
-            { label: "Lula", value: (m.dL >= 0 ? "+" : "−") + C.fmtInt(Math.abs(Math.round(m.dL)), locale), color: CL.lula },
-            { label: "Flávio", value: (m.dF >= 0 ? "+" : "−") + C.fmtInt(Math.abs(Math.round(m.dF)), locale), color: CL.flavio },
-            { label: S.capture.share, value: C.fmtPct(m.share, 0, locale) },
-          ],
-        };
+        // Per-candidate shares and totals (round 1 → round 2), plus the
+        // chart's own metric (Lula's share of the net between-round gain).
+        const rows = zoneShareRows(z, locale, S.capture.total);
+        rows.push({ label: S.capture.share, value: C.fmtPct(m.share, 0, locale) });
+        return { title: `${zoneTitle(z, S)} · #${z[ZONA]}`, rows };
       },
     });
   }
@@ -913,7 +917,7 @@
     // rebuilt (new highlight circle, new handle), so any previous
     // selection no longer points at anything real -- reset the search
     // UI to match.
-    ["funnel", "r1vsr2"].forEach((idPrefix) => {
+    ["funnel", "r1vsr2", "capture"].forEach((idPrefix) => {
       const searchInput = document.getElementById(`${idPrefix}-search-input`);
       const searchClear = document.getElementById(`${idPrefix}-search-clear`);
       if (searchInput) {
@@ -945,6 +949,12 @@
     zones: D.zones.filter((z) => z[P1] !== null),
     chartContainerId: "chart-r1-vs-r2",
     getHandle: () => r1vsr2Handle,
+  });
+  setupChartSearch({
+    idPrefix: "capture",
+    zones: captureData().map((p) => p.z),
+    chartContainerId: "chart-capture",
+    getHandle: () => captureHandle,
   });
 
   // Re-render with new colors/text when the viewer toggles light/dark theme
