@@ -535,7 +535,7 @@ def robustness_panel(z2: pd.DataFrame) -> list[dict]:
     run("baseline", z2, 0.90)
     run("exclude_abroad", z2[~z2["is_abroad"]], 0.90)
     run("exclude_small_n", z2[z2["n_r2"] >= 50], 0.90)
-    run("threshold_80", z2, 0.80)
+    run("threshold_85", z2, 0.85)
     run("threshold_95", z2, 0.95)
     return variants
 
