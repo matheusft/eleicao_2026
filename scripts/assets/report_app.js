@@ -63,10 +63,14 @@
       },
       mc: {
         valueLabel: (n) => `Simulated trials (of ${n})`,
-        categoryLabel: "Simulated count of zones (per trial)",
+        categoryLabel: "Simulated count of 90%+ zones (per trial)",
         tooltipTitle: (k) => `${k} zones ≥90%`,
         simulatedTrials: "Simulated trials",
         actualMarker: (n) => `actual = ${n}`,
+        meanMarker: (m) => `chance avg ${m}`,
+        titleLula: "If chance alone drove Lula's 90%+ zones",
+        titleFlavio: "If chance alone drove Flávio's 90%+ zones",
+        legendBand: "Where 90% of simulations land",
       },
       digit: {
         valueLabel: "Zones",
@@ -162,10 +166,14 @@
       },
       mc: {
         valueLabel: (n) => `Simulações (de ${n})`,
-        categoryLabel: "Número simulado de zonas (por simulação)",
+        categoryLabel: "Número simulado de zonas com 90%+ (por simulação)",
         tooltipTitle: (k) => `${k} zonas ≥90%`,
         simulatedTrials: "Simulações",
         actualMarker: (n) => `real = ${n}`,
+        meanMarker: (m) => `média do acaso ${m}`,
+        titleLula: "Se só o acaso gerasse as zonas de 90%+ de Lula",
+        titleFlavio: "Se só o acaso gerasse as zonas de 90%+ de Flávio",
+        legendBand: "Onde caem 90% das simulações",
       },
       digit: {
         valueLabel: "Zonas",
@@ -459,6 +467,14 @@
   }
 
   // ---------------- 6. Monte Carlo ----------------
+  function percentile(sortedArr, q) {
+    const pos = (sortedArr.length - 1) * q;
+    const base = Math.floor(pos);
+    const rest = pos - base;
+    if (sortedArr[base + 1] !== undefined) return sortedArr[base] + rest * (sortedArr[base + 1] - sortedArr[base]);
+    return sortedArr[base];
+  }
+
   function renderMonteCarlo(S, locale) {
     const CL = col();
     function panel(containerId, sims, actual, color) {
@@ -469,13 +485,25 @@
       sims.forEach((v) => counts.set(v, (counts.get(v) || 0) + 1));
       const bars = [];
       for (let v = lo; v <= hi; v++) bars.push({ key: v, label: String(v), value: counts.get(v), color: CL.muted });
+      const mean = sims.reduce((a, b) => a + b, 0) / sims.length;
+      const sorted = sims.slice().sort((a, b) => a - b);
+      const p05 = Math.round(percentile(sorted, 0.05));
+      const p95 = Math.round(percentile(sorted, 0.95));
       C.renderBars(containerId, bars, {
         width: 460,
         height: 340,
+        margin: { top: 34, right: 16, bottom: 46, left: 56 },
         valueLabel: S.mc.valueLabel(D.monte_carlo.n_sim.toLocaleString(locale)),
         categoryLabel: S.mc.categoryLabel,
         maxXLabels: 10,
         tooltipFn: (b) => ({ title: S.mc.tooltipTitle(b.key), rows: [{ label: S.mc.simulatedTrials, value: C.fmtInt(b.value, locale), color: CL.muted }] }),
+        refBands: [{ lo: p05, hi: p95, color: C.COLOR.muted(), opacity: 0.18 }],
+        refMarkers: [
+          // Place the mean label a line lower than the "actual" label so the
+          // two never collide when the mean and the actual count are close
+          // (as they are in the Flávio panel).
+          { value: mean, label: S.mc.meanMarker(mean.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })), color: C.COLOR.textStrong(), align: actual < mean ? "left" : "right", dashed: true, labelY: 30 },
+        ],
         markers: [{ key: actual, label: S.mc.actualMarker(actual), color: color, align: actual < (lo + hi) / 2 ? "right" : "left" }],
       });
     }
