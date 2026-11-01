@@ -625,7 +625,7 @@ td.winner-cell {{ text-align: center; }}
 <header class="masthead">
   <div class="wrap">
     <div class="kicker">{B("span", "Statistical forensics · Brazil 2026 Presidential Election", "Perícia estatística · Eleição Presidencial do Brasil 2026")}</div>
-    {B("h1", "Were round-2 high-concentration zones a sign of fraud, or of Brazilian political geography?", "As zonas de alta concentração de votos no 2º turno são sinal de fraude, ou de geografia política brasileira?", cls="title")}
+    {B("h1", "Decoding the Ballot: A Statistical Audit of Brazilian Electoral Geography", "Decodificando as Urnas: Uma Auditoria Estatística da Geografia Eleitoral Brasileira", cls="title")}
     {B("p", f"A ground-up statistical audit of the official TSE results for both rounds: zone-by-zone concentration analysis, a chance-model Monte&nbsp;Carlo simulation, digit tests, and a round&#8209;1-vs-round&#8209;2 consistency check across all {fnum(summary['n_total_zones_r2'],'en')} electoral zones.", f"Uma auditoria estatística, construída do zero, dos resultados oficiais do TSE nos dois turnos: análise zona a zona da concentração de votos, uma simulação de Monte&nbsp;Carlo com modelo de acaso, testes de dígitos e uma verificação de consistência entre 1º e 2º turno em todas as {fnum(summary['n_total_zones_r2'],'pt')} zonas eleitorais.", cls="dek")}
     <div class="meta-row">
       {B("span", "Source: TSE dadosabertos.tse.jus.br — official results only", "Fonte: TSE dadosabertos.tse.jus.br — apenas resultados oficiais")}
