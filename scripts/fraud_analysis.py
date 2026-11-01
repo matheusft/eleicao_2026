@@ -507,6 +507,91 @@ def blank_null_stats(turnout_all: pd.DataFrame) -> dict:
     return out
 
 
+def between_round_capture(z2: pd.DataFrame) -> dict:
+    """Addresses a specific fraud claim: that in some zones one candidate
+    captured ~100% of the extra votes between round 1 and round 2 (the
+    eliminated candidates' votes, recovered blank/null, and higher turnout),
+    while the other gained nothing. The claim is TRUE but is a restatement of
+    the national swing through an unstable ratio, not a fraud signature:
+      - "X captured 100% of the net gain" just means the OTHER candidate's
+        zone total did not rise. Because the runoff swung to Lula, Flavio's
+        total failed to rise far more often than Lula's.
+      - The pattern is symmetric (it happens for Flavio in his strongholds)
+        and tracks how the zone already leaned (ordinary consolidation).
+      - Crucially, no votes are invented: the winner's gain never exceeds the
+        REAL pool of available voters, and turnout never exceeds the
+        electorate (see data_integrity)."""
+    dL = (z2["lula_r2"] - z2["lula_r1"]).to_numpy(dtype=float)
+    dF = (z2["flavio_r2"] - z2["flavio_r1"]).to_numpy(dtype=float)
+    net = dL + dF
+    lean = z2["p_r1_twoparty"].to_numpy(dtype=float)
+    n = len(z2)
+
+    lula_ge100 = (net > 0) & (dF <= 0) & (dL > 0)
+    flavio_ge100 = (net > 0) & (dL <= 0) & (dF > 0)
+
+    # Does the winner's gain fit inside the REAL available pool in each zone?
+    nonfin_r1 = (
+        z2["comparecimento_r1"] - z2["lula_r1"] - z2["flavio_r1"]
+    ).to_numpy(dtype=float)
+    new_turnout = np.clip(
+        (z2["comparecimento_r2"] - z2["comparecimento_r1"]).to_numpy(dtype=float), 0, None
+    )
+    flavio_lost = np.clip(-dF, 0, None)
+    pool_lula = nonfin_r1 + new_turnout + flavio_lost
+    gpos = dL > 0
+    gain_vs_pool = dL[gpos] / np.where(pool_lula[gpos] > 0, pool_lula[gpos], np.nan)
+
+    # Consolidation: Lula's share of the net gain vs how the zone leaned.
+    meaningful = net > 50
+    share = np.clip(dL[meaningful] / net[meaningful], -0.5, 1.5)
+    corr = float(np.corrcoef(lean[meaningful], share)[0, 1])
+
+    def example(mask, winner, stronghold_only=False):
+        # Largest-magnitude domestic zone where `winner` captured everything.
+        # For Lula we restrict to his strongholds (>60% there in round 1) so
+        # the example illustrates ordinary consolidation; the (rare) Flavio
+        # cases are counter-swing zones, so we just take the largest.
+        keep = mask & (~z2["is_abroad"])
+        if stronghold_only:
+            own_lean = z2["p_r1_twoparty"] if winner == "lula" else 1 - z2["p_r1_twoparty"]
+            keep = keep & (own_lean >= 0.6)
+        sub = z2[keep].copy()
+        if not len(sub):
+            return None
+        sub["dL"] = sub["lula_r2"] - sub["lula_r1"]
+        sub["dF"] = sub["flavio_r2"] - sub["flavio_r1"]
+        row = sub.sort_values(
+            "dL" if winner == "lula" else "dF", ascending=False
+        ).iloc[0]
+        return {
+            "nm_municipio": row["nm_municipio"].title(),
+            "sg_uf": row["sg_uf"],
+            "nr_zona": int(row["nr_zona"]),
+            "dL": int(row["dL"]),
+            "dF": int(row["dF"]),
+            "p_r1_twoparty": float(row["p_r1_twoparty"]),
+        }
+    return {
+        "n_zones": int(n),
+        "lula_ge100_zones": int(lula_ge100.sum()),
+        "lula_ge100_pct": float(100 * lula_ge100.mean()),
+        "flavio_ge100_zones": int(flavio_ge100.sum()),
+        "flavio_ge100_pct": float(100 * flavio_ge100.mean()),
+        "pct_flavio_no_growth": float(100 * (dF <= 0).mean()),
+        "pct_lula_no_growth": float(100 * (dL <= 0).mean()),
+        "corr_lean_capture": corr,
+        "max_gain_vs_pool_pct": float(100 * np.nanmax(gain_vs_pool)),
+        "n_zones_gain_exceeds_pool": int(np.nansum(gain_vs_pool > 1.0001)),
+        "example_lula": example(
+            pd.Series(lula_ge100, index=z2.index), "lula", stronghold_only=True
+        ),
+        "example_flavio": example(
+            pd.Series(flavio_ge100, index=z2.index), "flavio"
+        ),
+    }
+
+
 def robustness_panel(z2: pd.DataFrame) -> list[dict]:
     """Re-run the chance-model landslide test under several variants that
     each 'try to break' the headline Monte Carlo finding: dropping abroad
@@ -792,6 +877,7 @@ def main() -> None:
     summary["vote_transfer"] = vote_transfer_analysis(votes)
     summary["blank_null"] = blank_null_stats(turnout)
     summary["robustness"] = robustness_panel(z2)
+    summary["between_round_capture"] = between_round_capture(z2)
 
     with open(ANALYSIS_DIR / "summary.json", "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2, ensure_ascii=False)
