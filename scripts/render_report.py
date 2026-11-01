@@ -125,26 +125,55 @@ def main() -> None:
     bn_lo = bn_sorted[:2]
     bn_hi = list(reversed(bn_sorted[-2:]))
 
+    # (short_en, short_pt, desc_en, desc_pt). The short label keeps the table
+    # narrow; the full description lives in a tap/hover tooltip.
     ROBUSTNESS_LABELS = {
-        "baseline": ("All zones, 90% threshold (the headline test)", "Todas as zonas, limiar de 90% (o teste principal)"),
-        "exclude_abroad": ("Excluding the 186 abroad voting locations", "Excluindo os 186 locais de votação no exterior"),
-        "exclude_small_n": ("Excluding zones with fewer than 50 voters", "Excluindo zonas com menos de 50 eleitores"),
-        "threshold_80": ("Using an 80% concentration threshold instead of 90%", "Usando um limiar de 80% em vez de 90%"),
-        "threshold_95": ("Using a 95% concentration threshold instead of 90%", "Usando um limiar de 95% em vez de 90%"),
+        "baseline": (
+            "All zones · 90% bar", "Todas as zonas · limiar 90%",
+            "The headline test from §4: every zone, counting those at or above 90%.",
+            "O teste principal da §4: todas as zonas, contando as que ficam em 90% ou acima.",
+        ),
+        "exclude_abroad": (
+            "Drop overseas posts", "Sem postos no exterior",
+            "Excludes the 186 overseas consular voting locations, which are tiny and could behave differently.",
+            "Exclui os 186 locais de votação consular no exterior, que são minúsculos e poderiam se comportar de forma diferente.",
+        ),
+        "exclude_small_n": (
+            "Drop tiny zones (<50)", "Sem zonas minúsculas (<50)",
+            "Excludes zones with fewer than 50 two-candidate votes, where a single vote moves the share a lot.",
+            "Exclui zonas com menos de 50 votos entre os dois candidatos, onde um único voto desloca muito o percentual.",
+        ),
+        "threshold_85": (
+            "Looser bar · 85%", "Limiar mais frouxo · 85%",
+            "Counts zones at or above 85% instead of 90% — a looser definition of 'high concentration'.",
+            "Conta zonas em 85% ou acima, em vez de 90% — uma definição mais frouxa de 'alta concentração'.",
+        ),
+        "threshold_95": (
+            "Stricter bar · 95%", "Limiar mais estrito · 95%",
+            "Counts zones at or above 95% — a much stricter definition.",
+            "Conta zonas em 95% ou acima — uma definição bem mais estrita.",
+        ),
     }
+
+    def rob_cell(actual: int, mean: float, p05: float, p95: float, lang: str) -> str:
+        chance = "chance" if lang == "en" else "acaso"
+        return (
+            f'<strong>{fnum(actual, lang)}</strong>'
+            f'<span class="chance">{chance} ~{fnum(mean, lang, 0)} '
+            f'({fnum(p05, lang, 0)}&ndash;{fnum(p95, lang, 0)})</span>'
+        )
 
     def robustness_rows(lang: str) -> str:
         rows = []
-        for key, (en_lbl, pt_lbl) in ROBUSTNESS_LABELS.items():
+        for key, (en_lbl, pt_lbl, en_desc, pt_desc) in ROBUSTNESS_LABELS.items():
             r = rb_by_key[key]
             label = en_lbl if lang == "en" else pt_lbl
+            desc = en_desc if lang == "en" else pt_desc
             rows.append(f"""<tr>
-              <td>{label}</td>
+              <td>{tip(label, desc)}</td>
               <td class="num">{fnum(r['n_zones'], lang)}</td>
-              <td class="num">{r['actual_lula']}</td>
-              <td class="num">{fnum(r['sim_lula_mean'], lang, 1)} ({fnum(r['sim_lula_p05'], lang, 0)}&ndash;{fnum(r['sim_lula_p95'], lang, 0)})</td>
-              <td class="num">{r['actual_flavio']}</td>
-              <td class="num">{fnum(r['sim_flavio_mean'], lang, 1)} ({fnum(r['sim_flavio_p05'], lang, 0)}&ndash;{fnum(r['sim_flavio_p95'], lang, 0)})</td>
+              <td class="num rob-cell">{rob_cell(r['actual_lula'], r['sim_lula_mean'], r['sim_lula_p05'], r['sim_lula_p95'], lang)}</td>
+              <td class="num rob-cell">{rob_cell(r['actual_flavio'], r['sim_flavio_mean'], r['sim_flavio_p05'], r['sim_flavio_p95'], lang)}</td>
             </tr>""")
         return "".join(rows)
 
@@ -714,12 +743,14 @@ td.winner-cell {{ text-align: center; }}
 
 <section id="robustness">
   <h2><span class="num">05</span>{B("span", "Does this hold up under scrutiny?", "Isso se sustenta sob escrutínio?")}</h2>
-  {B("p", "A single test, however well designed, can get lucky. So we tried to break the result above five different ways: dropping the zones most likely to be edge cases, and changing what counts as \"high concentration\" in the first place. If the conclusion only held under the exact original settings, that would be a reason to distrust it.", "Um único teste, por melhor que seja projetado, pode ter sorte. Por isso tentamos \"quebrar\" o resultado acima de cinco formas diferentes: removendo as zonas mais propensas a serem casos extremos, e mudando o que conta como \"alta concentração\" em primeiro lugar. Se a conclusão só se sustentasse nas configurações originais exatas, isso seria motivo para desconfiar dela.", cls="lede")}
+  {B("p", "A single test, however well designed, can get lucky. So we re-ran the §4 experiment five times over, each time changing one thing: which zones are included, or where the 'high concentration' bar is set. If the conclusion only held under the exact original settings, that would be a reason to distrust it.", "Um único teste, por melhor que seja projetado, pode ter sorte. Por isso repetimos o experimento da §4 cinco vezes, mudando uma coisa de cada vez: quais zonas entram na conta, ou onde fica o patamar de 'alta concentração'. Se a conclusão só se sustentasse nas configurações originais exatas, isso seria motivo para desconfiar dela.", cls="lede")}
+
+  {B("p", "How to read each row: the <strong>actual</strong> number is how many zones really reached that row's bar; <strong>chance</strong> is what the simulation produced — its average and, in brackets, the range covering 90% of simulations. When the actual number sits below or inside the chance range, the real result looks ordinary. Tap a variant's name for exactly what it changes.", "Como ler cada linha: o número <strong>real</strong> é quantas zonas de fato atingiram o patamar daquela linha; <strong>acaso</strong> é o que a simulação produziu — sua média e, entre parênteses, a faixa que cobre 90% das simulações. Quando o número real fica abaixo ou dentro da faixa do acaso, o resultado real parece comum. Toque no nome de uma variante para ver exatamente o que ela muda.", attrs='style="font-size:14px;color:var(--text-secondary)"')}
 
   <div class="table-scroll">
   <table class="robustness-table">
     <thead><tr>
-      <th>{B("span", "Variant", "Variante")}</th>
+      <th>{B("span", "What we changed", "O que mudamos")}</th>
       <th>{B("span", "Zones", "Zonas")}</th>
       <th>{B("span", "Actual Lula ≥ threshold", "Real Lula ≥ limiar")}</th>
       <th>{B("span", "Chance range (mean, 90%)", "Faixa de acaso (média, 90%)")}</th>
@@ -734,9 +765,11 @@ td.winner-cell {{ text-align: center; }}
     {B("span", "<b>Lula's actual count of 90%+ zones stays below the chance range in every single variant</b> — not just the headline 90% test. That's the opposite of what you'd see if these results were manufactured.", "<b>O número real de zonas de Lula com 90%+ fica abaixo da faixa de acaso em todas as variantes</b> — não apenas no teste principal de 90%. Isso é o oposto do que se veria se esses resultados fossem fabricados.")}
   </div>
   <div class="callout caveat">
-    {B("span", f"<b>One result worth flagging rather than hiding:</b> at the 80% threshold, Flávio's actual count ({rb_by_key['threshold_80']['actual_flavio']} zones) sits just above the simulated 90% range ({fnum(rb_by_key['threshold_80']['sim_flavio_p05'],'en',0)}&ndash;{fnum(rb_by_key['threshold_80']['sim_flavio_p95'],'en',0)}, mean {fnum(rb_by_key['threshold_80']['sim_flavio_mean'],'en',1)}). On its own this is a mild, one-sided deviation in one of five variants tested, not corrected for running five comparisons — exactly the kind of borderline result that shows up by chance occasionally when you check several thresholds. It is not evidence of anything on its own, but it is the kind of specific, named result that would be worth a second look with finer-grained (polling-section) data.", f"<b>Um resultado que vale sinalizar, não esconder:</b> no limiar de 80%, o número real de Flávio ({rb_by_key['threshold_80']['actual_flavio']} zonas) fica logo acima da faixa simulada de 90% ({fnum(rb_by_key['threshold_80']['sim_flavio_p05'],'pt',0)}&ndash;{fnum(rb_by_key['threshold_80']['sim_flavio_p95'],'pt',0)}, média {fnum(rb_by_key['threshold_80']['sim_flavio_mean'],'pt',1)}). Isoladamente, isso é um desvio leve e unilateral em uma de cinco variantes testadas, sem correção para múltiplas comparações — exatamente o tipo de resultado limítrofe que aparece por acaso ocasionalmente quando se testam vários limiares. Não é evidência de nada por si só, mas é o tipo de resultado específico e nomeado que mereceria um novo olhar com dados mais granulares (por seção eleitoral).")}
+    {B("span", f"<b>One result worth flagging rather than hiding:</b> Flávio's high-concentration zones come out slightly more often than chance predicts at the two stricter thresholds — {rb_by_key['threshold_85']['actual_flavio']} zones at 85% (chance range {fnum(rb_by_key['threshold_85']['sim_flavio_p05'],'en',0)}&ndash;{fnum(rb_by_key['threshold_85']['sim_flavio_p95'],'en',0)}) and {rb_by_key['baseline']['actual_flavio']} at 90% (chance range {fnum(rb_by_key['baseline']['sim_flavio_p05'],'en',0)}&ndash;{fnum(rb_by_key['baseline']['sim_flavio_p95'],'en',0)}). Each sits around the 98th&ndash;99th percentile of the chance model on its own — roughly a one-in-twenty result, and we have not corrected for testing several thresholds. So it is small (a handful of zones) and one-sided, and it points in the <em>opposite</em> direction to the high-Lula concentration this report set out to examine. It is not evidence of anything by itself — but because it shows up at more than one threshold rather than a single lucky cut-off, it is a specific, named result worth a second look with finer-grained (polling-section) data.", f"<b>Um resultado que vale sinalizar, não esconder:</b> as zonas de alta concentração de Flávio aparecem um pouco mais do que o acaso prevê nos dois limiares mais estritos — {rb_by_key['threshold_85']['actual_flavio']} zonas em 85% (faixa de acaso {fnum(rb_by_key['threshold_85']['sim_flavio_p05'],'pt',0)}&ndash;{fnum(rb_by_key['threshold_85']['sim_flavio_p95'],'pt',0)}) e {rb_by_key['baseline']['actual_flavio']} em 90% (faixa de acaso {fnum(rb_by_key['baseline']['sim_flavio_p05'],'pt',0)}&ndash;{fnum(rb_by_key['baseline']['sim_flavio_p95'],'pt',0)}). Cada um fica por volta do percentil 98&ndash;99 do modelo de acaso isoladamente — cerca de um resultado em vinte, e não corrigimos para o teste de vários limiares. Ou seja, é pequeno (um punhado de zonas) e unilateral, e aponta na direção <em>oposta</em> à alta concentração de Lula que este relatório se propôs a examinar. Não é evidência de nada por si só — mas, por aparecer em mais de um limiar, e não em um único corte de sorte, é um resultado específico e nomeado que mereceria um novo olhar com dados mais granulares (por seção eleitoral).")}
   </div>
 </section>
+
+  {takeaway("The finding holds up under every reasonable change to the rules. One small, honest caveat: Flávio ends up with slightly more lopsided zones than chance predicts — a handful of zones, and it shows up at more than one threshold rather than once by luck. It is mild, points the opposite way to the pattern this section is scrutinising, and proves nothing on its own, but we flag it rather than hide it.", "O resultado se sustenta sob toda mudança razoável nas regras. Uma pequena ressalva honesta: Flávio acaba com um pouco mais de zonas desequilibradas do que o acaso prevê — um punhado de zonas, e isso aparece em mais de um limiar, não uma única vez por sorte. É leve, aponta na direção oposta ao padrão que esta seção examina, e não prova nada por si só, mas nós o sinalizamos em vez de escondê-lo.")}
 
 <section id="consistency">
   <h2><span class="num">06</span>{B("span", "Were these 90%+ results sudden, or pre-existing?", "Esses resultados de 90%+ foram súbitos, ou já existiam?")}</h2>
