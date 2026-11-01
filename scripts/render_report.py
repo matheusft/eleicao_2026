@@ -113,7 +113,7 @@ def main() -> None:
           <td class="num">{fnum(r['n_r2'], lang)}</td>
           <td class="num">{pct(100*r['p_r1_twoparty'], lang)}%</td>
           <td class="num">{pct(100*r['p_r2'], lang)}%</td>
-          <td><span class="pill {'pill-lula' if r['winner']=='LULA' else 'pill-flavio'}">{winner_label(r)}</span></td>
+          <td class="winner-cell"><span class="pill {'pill-lula' if r['winner']=='LULA' else 'pill-flavio'}">{winner_label(r)}</span></td>
         </tr>""" for r in summary["top_landslide_zones_by_n"])
 
     corr_cls = "caveat" if abs(corr["pearson_r"]) > 0.3 else "ok"
@@ -646,7 +646,7 @@ td.winner-cell {{ text-align: center; }}
 </section>
 
   <div class="callout method">
-    {B("span", '<b>Why "90% can\'t happen by chance" is the wrong test.</b> The naive instinct is to compare a 90% result to a fair coin flip. But nobody expects a fair coin locally — Brazil has enormous real geographic variation in candidate support (the Northeast leans heavily PT; parts of the South and agribusiness belt lean heavily PL). The right question is whether a zone\'s result is surprising <em>given its own size and its own political baseline</em> — not against a 50/50 assumption nobody believes.', '<b>Por que "90% não pode acontecer por acaso" é o teste errado.</b> O instinto ingênuo é comparar um resultado de 90% a uma moeda honesta. Mas ninguém espera uma moeda honesta em nível local — o Brasil tem enorme variação geográfica real no apoio aos candidatos (o Nordeste pende fortemente para o PT; partes do Sul e do cinturão do agronegócio pendem fortemente para o PL). A pergunta certa é se o resultado de uma zona é surpreendente <em>dado o seu próprio tamanho e a sua própria base política</em> — não contra uma suposição de 50/50 em que ninguém acredita.')}
+    {B("span", "<b>How we decide whether a result is surprising.</b> A 90% result is not surprising on its own: support for a candidate varies enormously across Brazil for real, well-documented reasons — the Northeast has long leaned heavily towards the PT, while parts of the South and the agribusiness belt lean the other way. So rather than asking whether 90% beats a coin flip (a bar nobody expects a real town to clear), we ask a fairer question in the sections that follow: is each zone's result surprising <em>given its own size and how that same zone voted in round 1</em>?", "<b>Como decidimos se um resultado é surpreendente.</b> Um resultado de 90% não é surpreendente por si só: o apoio a um candidato varia enormemente pelo Brasil por razões reais e bem documentadas — o Nordeste há muito pende fortemente para o PT, enquanto partes do Sul e do cinturão do agronegócio pendem para o outro lado. Então, em vez de perguntar se 90% supera um cara ou coroa (um patamar que ninguém espera de uma cidade real), fazemos nas seções seguintes uma pergunta mais justa: o resultado de cada zona é surpreendente <em>dado o seu próprio tamanho e como essa mesma zona votou no 1º turno</em>?")}
   </div>
 
   <div class="exhibit">
@@ -657,13 +657,13 @@ td.winner-cell {{ text-align: center; }}
       <ul id="funnel-search-results" class="chart-search-results" role="listbox" hidden></ul>
     </div>
     <div id="chart-funnel" class="chart-container" style="flex:1"></div>
-    {B("div", "Figure 3. Every zone's round-2 result plotted against its size (log scale). Use the search box above to jump straight to a specific municipality. Hover any point for that zone's municipality, vote count and round-1/round-2 shares. High-concentration zones (highlighted) span from tiny abroad voting posts to towns of several thousand voters — they are not a uniform small-N artifact. The flat horizontal line marks the national result (51.79%) for reference.", "Figura 3. O resultado do 2º turno de cada zona em função do seu tamanho (escala logarítmica). Use a busca acima para ir direto a um município específico. Passe o mouse sobre qualquer ponto para ver o município, o número de votos e os percentuais no 1º/2º turno dessa zona. As zonas de alta concentração (destacadas) vão de pequenos postos de votação no exterior a cidades com milhares de eleitores — não são um artefato uniforme de amostra pequena. A linha horizontal marca o resultado nacional (51,79%) como referência.", cls="cap")}
+    {B("div", f"Figure 3. Every zone's round-2 result plotted against its size (log scale). Use the search box above to jump straight to a specific municipality. Hover any point for that zone's municipality, vote count and round-1/round-2 shares. High-concentration zones (highlighted) span from tiny abroad voting posts to towns of several thousand voters — they are not a uniform small-N artifact. The flat horizontal line marks the national result ({pct(nat['lula_r2_pct'],'en')}%) for reference.", f"Figura 3. O resultado do 2º turno de cada zona em função do seu tamanho (escala logarítmica). Use a busca acima para ir direto a um município específico. Passe o mouse sobre qualquer ponto para ver o município, o número de votos e os percentuais no 1º/2º turno dessa zona. As zonas de alta concentração (destacadas) vão de pequenos postos de votação no exterior a cidades com milhares de eleitores — não são um artefato uniforme de amostra pequena. A linha horizontal marca o resultado nacional ({pct(nat['lula_r2_pct'],'pt')}%) como referência.", cls="cap")}
   </div>
 
   {B("h3", "The actual 90%+ zones, largest first", "As zonas de 90%+, da maior para a menor")}
   {B("p", "Here are the 15 largest-electorate zones among those that hit 90%+, with their round-1 result alongside for context:", "Estas são as 15 zonas com maior eleitorado entre as que atingiram 90%+, com o resultado do 1º turno ao lado para contexto:")}
   <div class="table-scroll">
-  <table>
+  <table class="landslide-table">
     <thead><tr>
       <th>{B("span", "Municipality / state", "Município / estado")}</th>
       <th>{B("span", "Zone", "Zona")}</th>
@@ -675,7 +675,9 @@ td.winner-cell {{ text-align: center; }}
     {B("tbody", landslide_rows("en"), landslide_rows("pt"))}
   </table>
   </div>
-  {B("p", "Several of the largest are small towns in the rural Northeast (Pernambuco, Piauí, Alagoas, Maranhão, Amazonas) — a region with a decades-long, well-documented pattern of 80&ndash;95%+ PT support in legitimate elections, visible again in round 1 of this same election. The abroad locations (consulates) are tiny voting posts of a few hundred to low-thousands of self-selected expatriates, where extreme splits are routine and expected.", "Várias das maiores são pequenas cidades do Nordeste rural (Pernambuco, Piauí, Alagoas, Maranhão, Amazonas) — uma região com um padrão bem documentado, de décadas, de apoio de 80&ndash;95%+ ao PT em eleições legítimas, visível novamente no 1º turno desta mesma eleição. Os locais no exterior (consulados) são pequenos postos de votação de algumas centenas a poucos milhares de eleitores autosselecionados, onde resultados extremos são rotineiros e esperados.", attrs='style="font-size:13.5px;color:var(--text-secondary)"')}
+  {B("p", 'What stands out in the table is the round-1 column: each of these zones already gave the same candidate an almost identical share in round 1, before the field narrowed to two candidates. Most are small municipalities in the North and Northeast; a handful are overseas consular posts with only a few hundred to a few thousand voters, where small vote counts on their own can produce lopsided splits. Whether this regional pattern lines up with how these places have voted before is tested directly in <a href="#consistency">§6</a> and <a href="#geography">§11</a> — we do not ask you to take it on trust here.', 'O que chama a atenção na tabela é a coluna do 1º turno: cada uma dessas zonas já havia dado ao mesmo candidato um percentual quase idêntico no 1º turno, antes de o campo se reduzir a dois candidatos. A maioria são pequenos municípios do Norte e Nordeste; alguns são postos consulares no exterior, com apenas algumas centenas a poucos milhares de eleitores, onde contagens pequenas, por si só, já podem gerar divisões desequilibradas. Se esse padrão regional é coerente com a forma como esses lugares votaram antes é verificado diretamente nas <a href="#consistency">§6</a> e <a href="#geography">§11</a> — não pedimos que você acredite nisso aqui.', attrs='style="font-size:13.5px;color:var(--text-secondary)"')}
+
+  {takeaway("Fewer than a quarter of one percent of zones gave either candidate 90%+. They sit in the thin tail of a smooth, ordinary distribution and are concentrated in small towns — not a separate cluster that appeared from nowhere.", "Menos de um quarto de um por cento das zonas deram 90%+ a qualquer candidato. Elas ficam na cauda fina de uma distribuição suave e comum e estão concentradas em cidades pequenas — não são um agrupamento à parte que surgiu do nada.")}
 </section>
 
 <section id="montecarlo">
