@@ -600,6 +600,9 @@
       lab.textContent = (opts.xTickFormat || ((v) => v))(t);
       g.appendChild(lab);
     });
+    (opts.vlines || []).forEach((vl) => {
+      g.appendChild(el("line", { x1: xScale(vl.x), x2: xScale(vl.x), y1: 0, y2: innerH, class: vl.cls || "refline" }));
+    });
 
     rows.forEach((r, i) => {
       const y = i * rh + rh / 2;

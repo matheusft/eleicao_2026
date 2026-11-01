@@ -86,6 +86,7 @@ def main() -> None:
                 round_or_none(row["p_r2"]),
                 round_or_none(row.get("abstention_r1")),
                 round_or_none(row.get("abstention_r2")),
+                int(row["lula_r2"] + row["flavio_r2"]),
             ]
             for row in summary["state_table"]
             if row["sg_uf"] != "ZZ"

@@ -90,6 +90,7 @@
         r2: "Round 2",
         swing: "Swing",
         swingPts: (v) => `${v} pts`,
+        total: "Total votes (round 2)",
       },
       stateTurnout: {
         legendR1: "Round 1",
@@ -196,6 +197,7 @@
         r2: "2º turno",
         swing: "Variação",
         swingPts: (v) => `${v} pts`,
+        total: "Total de votos (2º turno)",
       },
       stateTurnout: {
         legendR1: "1º turno",
@@ -574,12 +576,13 @@
     const rows = D.state_table
       .slice()
       .sort((a, b) => b[2] - a[2])
-      .map((r) => ({ label: r[0], v1: r[1] * 100, v2: r[2] * 100, color1: CL.muted, color2: CL.accent }));
+      .map((r) => ({ label: r[0], v1: r[1] * 100, v2: r[2] * 100, votes: r[5], color1: CL.muted, color2: CL.accent }));
     C.renderDotLine("chart-state-swing", rows, {
       width: 680,
       height: rows.length * 26 + 50,
       xDomain: [15, 80],
       xTickFormat: (v) => v + "%",
+      vlines: [{ x: 50, cls: "refline-dotted" }],
       legend: [
         { color: CL.muted, label: S.state.legendR1 },
         { color: CL.accent, label: S.state.legendR2 },
@@ -590,6 +593,7 @@
           { label: S.state.r1, value: C.fmtPct(r.v1, 1, locale) },
           { label: S.state.r2, value: C.fmtPct(r.v2, 1, locale), color: CL.accent },
           { label: S.state.swing, value: (r.v2 - r.v1 >= 0 ? "+" : "") + S.state.swingPts((r.v2 - r.v1).toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })) },
+          { label: S.state.total, value: C.fmtInt(r.votes, locale) },
         ],
       }),
     });
