@@ -119,6 +119,7 @@
     tooltipEl = document.createElement("div");
     tooltipEl.className = "chart-tooltip";
     document.body.appendChild(tooltipEl);
+    bindTouchDismiss();
     return tooltipEl;
   }
   function showTooltip(clientX, clientY, title, rows) {
@@ -161,6 +162,40 @@
   }
   function hideTooltip() {
     if (tooltipEl) tooltipEl.style.display = "none";
+  }
+
+  // --- touch support ---------------------------------------------------
+  // Charts were hover-only, so on phones/tablets a tap showed nothing (or
+  // flashed the tooltip for an instant before `pointerleave` fired at the
+  // end of the tap). We now (a) treat a tap like a hover via `pointerdown`,
+  // (b) keep the tooltip up after a touch instead of hiding it on leave,
+  // and (c) dismiss it when the next tap lands outside any chart.
+  let touchDismissBound = false;
+  function bindTouchDismiss() {
+    if (touchDismissBound) return;
+    touchDismissBound = true;
+    document.addEventListener(
+      "pointerdown",
+      (ev) => {
+        if (ev.pointerType !== "touch") return;
+        const t = ev.target;
+        if (!t.closest || !t.closest(".chart-svg")) hideTooltip();
+      },
+      true
+    );
+  }
+  // Wrap a pointerleave handler so a touch does NOT trigger the hide (the
+  // tooltip stays until the user taps elsewhere); mouse leave still hides.
+  function onLeaveGuarded(fn) {
+    return (ev) => {
+      if (ev && ev.pointerType === "touch") return;
+      fn();
+    };
+  }
+  // Attach the same handler to both hover-move and tap-down.
+  function bindEnter(target, handler) {
+    target.addEventListener("pointermove", handler);
+    target.addEventListener("pointerdown", handler);
   }
 
   function svgPointerToLocal(svg, ev) {
@@ -307,13 +342,15 @@
       return bestD <= hitRadius2 ? best : -1;
     }
 
-    svg.addEventListener("pointermove", (ev) => {
+    const onScatterMove = (ev) => {
       const loc = svgPointerToLocal(svg, ev);
       const mx = loc.x - margin.left,
         my = loc.y - margin.top;
       if (mx < 0 || mx > innerW || my < 0 || my > innerH) {
-        hi.style.display = "none";
-        hideTooltip();
+        if (ev.pointerType !== "touch") {
+          hi.style.display = "none";
+          hideTooltip();
+        }
         return;
       }
       const idx = findNearest(mx, my);
@@ -325,15 +362,19 @@
         hi.style.display = "block";
         const info = opts.tooltipFn(points[idx]);
         showTooltip(ev.clientX, ev.clientY, info.title, info.rows);
-      } else {
+      } else if (ev.pointerType !== "touch") {
         hi.style.display = "none";
         hideTooltip();
       }
-    });
-    svg.addEventListener("pointerleave", () => {
-      hi.style.display = "none";
-      hideTooltip();
-    });
+    };
+    bindEnter(svg, onScatterMove);
+    svg.addEventListener(
+      "pointerleave",
+      onLeaveGuarded(() => {
+        hi.style.display = "none";
+        hideTooltip();
+      })
+    );
 
     container.textContent = "";
     container.appendChild(svg);
@@ -409,15 +450,15 @@
         });
         barsG.appendChild(rect);
         const hit = el("rect", { x: x0, y: 0, width: bw, height: innerH, fill: "transparent", class: "bar-hit" });
-        hit.addEventListener("pointermove", (ev) => {
+        bindEnter(hit, (ev) => {
           rect.classList.add("bar-hover");
           const info = opts.tooltipFn(b);
           showTooltip(ev.clientX, ev.clientY, info.title, info.rows);
         });
-        hit.addEventListener("pointerleave", () => {
+        hit.addEventListener("pointerleave", onLeaveGuarded(() => {
           rect.classList.remove("bar-hover");
           hideTooltip();
-        });
+        }));
         barsG.appendChild(hit);
       });
 
@@ -503,15 +544,15 @@
         g.appendChild(lbl);
 
         const hit = el("rect", { x: 0, y: y0, width: innerW, height: bh, fill: "transparent" });
-        hit.addEventListener("pointermove", (ev) => {
+        bindEnter(hit, (ev) => {
           rect.classList.add("bar-hover");
           const info = opts.tooltipFn(b);
           showTooltip(ev.clientX, ev.clientY, info.title, info.rows);
         });
-        hit.addEventListener("pointerleave", () => {
+        hit.addEventListener("pointerleave", onLeaveGuarded(() => {
           rect.classList.remove("bar-hover");
           hideTooltip();
-        });
+        }));
         g.appendChild(hit);
       });
       const ticks = niceLinearTicks([0, maxVal], 5);
@@ -567,11 +608,11 @@
       g.appendChild(el("circle", { cx: x2, cy: y, r: 4.5, fill: r.color2 }));
 
       const hit = el("rect", { x: 0, y: i * rh, width: innerW, height: rh, fill: "transparent" });
-      hit.addEventListener("pointermove", (ev) => {
+      bindEnter(hit, (ev) => {
         const info = opts.tooltipFn(r);
         showTooltip(ev.clientX, ev.clientY, info.title, info.rows);
       });
-      hit.addEventListener("pointerleave", hideTooltip);
+      hit.addEventListener("pointerleave", onLeaveGuarded(hideTooltip));
       g.appendChild(hit);
     });
 
@@ -636,15 +677,15 @@
           const rect = el("rect", { x, y: y0, width: w, height: barH, fill: seg.color, class: "bar", "fill-opacity": seg.opacity !== undefined ? seg.opacity : 1 });
           g.appendChild(rect);
           const hit = el("rect", { x, y: i * bh, width: Math.max(w, 2), height: bh, fill: "transparent" });
-          hit.addEventListener("pointermove", (ev) => {
+          bindEnter(hit, (ev) => {
             rect.classList.add("bar-hover");
             const info = opts.tooltipFn(r, seg);
             showTooltip(ev.clientX, ev.clientY, info.title, info.rows);
           });
-          hit.addEventListener("pointerleave", () => {
+          hit.addEventListener("pointerleave", onLeaveGuarded(() => {
             rect.classList.remove("bar-hover");
             hideTooltip();
-          });
+          }));
           g.appendChild(hit);
         }
         x += w;
