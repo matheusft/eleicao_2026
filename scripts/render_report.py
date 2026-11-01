@@ -184,6 +184,9 @@ def main() -> None:
         return "".join(rows)
 
     chart_data_json = (ANALYSIS_DIR / "chart_data.json").read_text(encoding="utf-8")
+    _cd_parsed = json.loads(chart_data_json)
+    total_r1_votes = sum(c[2] for c in _cd_parsed["national"]["round1"])
+    total_r2_votes = sum(c[2] for c in _cd_parsed["national"]["round2"])
     charts_js = read_asset("report_charts.js")
     app_js = read_asset("report_app.js")
 
@@ -396,6 +399,8 @@ a {{ color: var(--accent); }}
 .stat-tile .l {{ font-size: 12.5px; color: var(--text-muted); margin-top: 4px; }}
 .v.lula {{ color: var(--lula); }}
 .v.flavio {{ color: var(--flavio); }}
+.stat-grid-total {{ margin-bottom: 0; }}
+.stat-grid-total + .stat-grid {{ margin-top: 1px; }}
 
 .exhibit {{
   background: var(--surface-card);
@@ -656,7 +661,7 @@ td.winner-cell {{ text-align: center; }}
 
 <section id="headline">
   <h2><span class="num">02</span>{B("span", "The headline result", "O resultado principal")}</h2>
-  {B("p", f"Lula (PT) defeated Flávio Bolsonaro (PL) in the round-2 runoff. Round 1 was close — Flávio actually led narrowly — and Lula's share of the two-candidate vote rose by <strong>{pct(nat['swing_pts'],'en',2)} points</strong> between rounds, once the other {summary['n_round1_candidates']-2} round-1 candidates were eliminated. A later section (<a href=\"#transfers\">§7</a>) traces where that shift came from, using every eliminated candidate's own round-1 result.", f"Lula (PT) derrotou Flávio Bolsonaro (PL) no segundo turno. O primeiro turno foi disputado — Flávio, na verdade, liderou por pouco — e o percentual de Lula entre os dois candidatos subiu <strong>{pct(nat['swing_pts'],'pt',2)} pontos</strong> entre os turnos, depois que os outros {summary['n_round1_candidates']-2} candidatos do primeiro turno foram eliminados. Uma seção posterior (<a href=\"#transfers\">§7</a>) rastreia de onde veio essa variação, usando o resultado do primeiro turno de cada candidato eliminado.", cls="lede")}
+  {B("p", f"Lula (PT) defeated Flávio Bolsonaro (PL) in the round-2 runoff. Round 1 was close — Flávio actually led narrowly — and Lula's share of the two-candidate vote rose by <strong>{pct(nat['swing_pts'],'en',2)} points</strong> between rounds, once the other {summary['n_round1_candidates']-2} round-1 candidates were eliminated. A later section (<a href=\"#transfers\">§7</a>) traces where that shift came from, using every eliminated candidate's own round-1 result. In total, {fnum(total_r1_votes,'en')} valid votes were cast nationally in round 1 and {fnum(total_r2_votes,'en')} in round 2.", f"Lula (PT) derrotou Flávio Bolsonaro (PL) no segundo turno. O primeiro turno foi disputado — Flávio, na verdade, liderou por pouco — e o percentual de Lula entre os dois candidatos subiu <strong>{pct(nat['swing_pts'],'pt',2)} pontos</strong> entre os turnos, depois que os outros {summary['n_round1_candidates']-2} candidatos do primeiro turno foram eliminados. Uma seção posterior (<a href=\"#transfers\">§7</a>) rastreia de onde veio essa variação, usando o resultado do primeiro turno de cada candidato eliminado. Ao todo, foram {fnum(total_r1_votes,'pt')} votos válidos no 1º turno e {fnum(total_r2_votes,'pt')} no 2º turno, em todo o país.", cls="lede")}
 
   <div class="exhibit">
     <div>
@@ -666,6 +671,10 @@ td.winner-cell {{ text-align: center; }}
       <div id="chart-national-r2" class="chart-container"></div>
     </div>
     {B("div", f"Figure 1. Round-1 result (all {summary['n_round1_candidates']} candidates, as a share of all valid votes) and the official round-2 result. Hover or tap any bar for the exact share and the raw number of votes behind it. Flávio led round 1. To compare the two rounds fairly we use the {tip('two-candidate share', f'Lula&#39;s votes divided by (Lula + Flávio) votes only, setting the other {summary['n_round1_candidates']-2} candidates aside. Round 2 is a straight Lula-vs-Flávio contest, so this is the like-for-like baseline for it.')}: on that basis Lula had {pct(nat['lula_r1_twoparty_pct'],'en')}% in round 1, rising to {pct(nat['lula_r2_pct'],'en')}% in round 2.", f"Figura 1. Resultado do 1º turno (todos os {summary['n_round1_candidates']} candidatos, como percentual dos votos válidos) e o resultado oficial do 2º turno. Passe o mouse ou toque em qualquer barra para ver o percentual exato e o número de votos por trás dele. Flávio liderou o 1º turno. Para comparar os dois turnos de forma justa, usamos o {tip('percentual entre os dois finalistas', 'Os votos de Lula divididos apenas por (Lula + Flávio), deixando os demais candidatos de fora. O 2º turno é uma disputa direta Lula × Flávio, então essa é a base comparável para ele.')}: nessa base, Lula tinha {pct(nat['lula_r1_twoparty_pct'],'pt')}% no 1º turno, subindo para {pct(nat['lula_r2_pct'],'pt')}% no 2º turno.", cls="cap")}
+  </div>
+
+  <div class="stat-grid stat-grid-total">
+    {B("div", f'<div class="v">{fnum(total_r1_votes,"en")} → {fnum(total_r2_votes,"en")}</div><div class="l">Total valid votes, round 1 → round 2</div>', f'<div class="v">{fnum(total_r1_votes,"pt")} → {fnum(total_r2_votes,"pt")}</div><div class="l">Total de votos válidos, 1º turno → 2º turno</div>', cls="stat-tile")}
   </div>
 
   <div class="stat-grid">
