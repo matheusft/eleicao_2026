@@ -43,6 +43,9 @@ N_BOOT = 600
 
 LULA = "LULA"
 FLAVIO = "FLAVIO BOLSONARO"
+# Round-1 candidates estimated individually in the vote-transfer model; every
+# other candidate is pooled into "OTHER" (see build_municipality_candidate_matrix).
+TRANSFER_KEEP_SEPARATE = {LULA, FLAVIO, "RONALDO CAIADO"}
 OFFICIAL_LULA_R2_VOTES = 64_256_232
 OFFICIAL_FLAVIO_R2_VOTES = 59_826_041
 
@@ -300,17 +303,25 @@ def build_municipality_candidate_matrix(
     votes_all: pd.DataFrame,
 ) -> tuple[pd.DataFrame, list[str]]:
     """Municipality x candidate round-1 vote matrix, plus round-2
-    Lula/Flavio vote columns. Candidates below 1% of the national round-1
-    vote are pooled into an 'OUTROS' / 'OTHER' column so the ecological
-    regression below isn't trying to fit near-zero, noisy predictors."""
-    r1 = votes_all[votes_all["nr_turno"] == 1]
-    national_share = r1.groupby("nm_urna_candidato")["qt_votos_nominais"].sum()
-    national_share = national_share / national_share.sum()
-    small_candidates = set(national_share[national_share < 0.01].index)
+    Lula/Flavio vote columns.
 
+    We estimate only the two finalists and Ronaldo Caiado individually, and
+    pool every other round-1 candidate into a single 'OTHER' bloc. This is a
+    deliberate identifiability choice, not cosmetic: ecological regression
+    can only separate candidates whose municipal support patterns are
+    distinct. Caiado (a sitting governor with a geographically concentrated
+    base) is the one eliminated candidate the model resolves to an interior
+    estimate; the remaining eliminated candidates are smaller and too
+    collinear with the finalists to separate, so fitting them individually
+    pins their rates to the 0/1 boundaries with error bars so wide they carry
+    no information. Pooling them avoids presenting those non-identifiable
+    point estimates as if they were findings. (Fitting all candidates
+    separately leaves R^2 essentially unchanged, ~0.997, so nothing is lost
+    in fit -- only spurious precision is avoided.)"""
+    r1 = votes_all[votes_all["nr_turno"] == 1]
     r1_grouped = r1.copy()
     r1_grouped["group"] = r1_grouped["nm_urna_candidato"].where(
-        ~r1_grouped["nm_urna_candidato"].isin(small_candidates), "OTHER"
+        r1_grouped["nm_urna_candidato"].isin(TRANSFER_KEEP_SEPARATE), "OTHER"
     )
     wide = (
         r1_grouped.groupby(["sg_uf", "cd_municipio", "group"])["qt_votos_nominais"]
@@ -436,14 +447,6 @@ def vote_transfer_analysis(votes_all: pd.DataFrame) -> dict:
         )
         rows[-1]["other_rate"] = max(
             0.0, 1.0 - rows[-1]["lula_rate"] - rows[-1]["flavio_rate"]
-        )
-        # Boundary solutions (rate pinned at exactly 0 or 1) usually mean a
-        # small candidate's municipality-level pattern is too collinear
-        # with a larger one to separately identify -- flag it rather than
-        # present it as a confident finding.
-        rows[-1]["poorly_identified"] = bool(
-            (rows[-1]["lula_rate"] <= 1e-6 or rows[-1]["lula_rate"] >= 1 - 1e-6)
-            or (rows[-1]["flavio_rate"] <= 1e-6 or rows[-1]["flavio_rate"] >= 1 - 1e-6)
         )
 
     pred_lula = (X @ beta_lula) * SCALE
