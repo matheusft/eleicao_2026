@@ -850,11 +850,13 @@ td.winner-cell {{ text-align: center; }}
 
   <div class="exhibit">
     <div id="chart-blank-null" class="chart-container" style="min-height:220px"></div>
-    {B("div", "Figure 10. National blank and null vote rates, as a share of turnout, each round. Hover a bar for the exact rate.", "Figura 10. Taxas nacionais de votos em branco e nulos, como percentual do comparecimento, em cada turno. Passe o mouse sobre uma barra para ver a taxa exata.", cls="cap")}
+    {B("div", "Figure 8. National blank and null vote rates, as a share of turnout, each round. Hover or tap a bar for the exact rate.", "Figura 8. Taxas nacionais de votos em branco e nulos, como percentual do comparecimento, em cada turno. Passe o mouse ou toque em uma barra para ver a taxa exata.", cls="cap")}
   </div>
 
   {B("p", f"The combined rate varies by state in round 2, from a high in {bn_hi[0]['sg_uf']} ({pct(bn_hi[0]['r2'],'en',2)}%) and {bn_hi[1]['sg_uf']} ({pct(bn_hi[1]['r2'],'en',2)}%) down to {bn_lo[-1]['sg_uf']} ({pct(bn_lo[-1]['r2'],'en',2)}%) and {bn_lo[-2]['sg_uf']} ({pct(bn_lo[-2]['r2'],'en',2)}%) — a normal range for a country this size, and not something we ran a formal outlier test on in this pass (see the closing section).", f"A taxa combinada varia por estado no 2º turno, de um máximo em {bn_hi[0]['sg_uf']} ({pct(bn_hi[0]['r2'],'pt',2)}%) e {bn_hi[1]['sg_uf']} ({pct(bn_hi[1]['r2'],'pt',2)}%) até um mínimo em {bn_lo[-1]['sg_uf']} ({pct(bn_lo[-1]['r2'],'pt',2)}%) e {bn_lo[-2]['sg_uf']} ({pct(bn_lo[-2]['r2'],'pt',2)}%) — uma faixa normal para um país deste tamanho, e algo sobre o qual não rodamos um teste formal de valores atípicos nesta etapa (veja a seção final).")}
 </section>
+
+  {takeaway("Fewer voters rejected every candidate in round 2 than in round 1 — exactly what you'd expect when the choice narrows from twelve names to two. Nothing unusual here.", "Menos eleitores rejeitaram todos os candidatos no 2º turno do que no 1º — exatamente o esperado quando a escolha passa de doze nomes para dois. Nada de incomum aqui.")}
 
 <section id="digits">
   <h2><span class="num">10</span>{B("span", "Digit-based forensic tests", "Testes forenses baseados em dígitos")}</h2>
