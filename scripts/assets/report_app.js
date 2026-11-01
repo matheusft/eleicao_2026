@@ -98,12 +98,11 @@
       transfer: {
         legendLula: "Estimated to Lula",
         legendFlavio: "Estimated to Flávio",
-        otherName: "Other candidates",
+        otherName: "Other eliminated candidates",
         r1Votes: "Round-1 votes",
         toLula: "Estimated share to Lula",
         toFlavio: "Estimated share to Flávio",
         range90: (lo, hi) => `90% range: ${lo}–${hi}`,
-        poorlyIdentified: "Too collinear with a larger candidate to estimate reliably — treat as inconclusive",
       },
       blankNull: {
         categoryLabel: "",
@@ -201,12 +200,11 @@
       transfer: {
         legendLula: "Estimado para Lula",
         legendFlavio: "Estimado para Flávio",
-        otherName: "Outros candidatos",
+        otherName: "Demais candidatos eliminados",
         r1Votes: "Votos no 1º turno",
         toLula: "Percentual estimado para Lula",
         toFlavio: "Percentual estimado para Flávio",
         range90: (lo, hi) => `faixa de 90%: ${lo}–${hi}`,
-        poorlyIdentified: "Colinear demais com um candidato maior para estimar com confiança — trate como inconclusivo",
       },
       blankNull: {
         categoryLabel: "",
@@ -572,8 +570,6 @@
     LULA: "Lula",
     "FLAVIO BOLSONARO": "Flávio Bolsonaro",
     "RONALDO CAIADO": "Ronaldo Caiado",
-    "ESCRITOR AUGUSTO CURY": "Escritor Augusto Cury",
-    "RENAN SANTOS": "Renan Santos",
   };
 
   // ---------------- 9. Vote transfer (where did round-1 votes go) ----------------
@@ -589,12 +585,15 @@
     const rows = ordered.map((c) => {
       const name = c.candidate === "OTHER" ? S.transfer.otherName : CANDIDATE_DISPLAY[c.candidate] || c.candidate;
       return {
-        label: name + (c.poorly_identified ? " †" : ""),
+        label: name,
         meta: c,
         segments: [
           { value: c.lula_rate, color: CL.lula, which: "lula" },
           { value: c.flavio_rate, color: CL.flavio, which: "flavio" },
         ],
+        // 90% CI on the estimated share going to Lula (the segment divider),
+        // drawn as a whisker so the uncertainty is visible on the chart.
+        ci: { lo: c.lula_rate_lo, hi: c.lula_rate_hi, point: c.lula_rate, color: C.COLOR.textStrong() },
       };
     });
 
@@ -617,8 +616,7 @@
           { label: S.transfer.range90(pctStr(lo), pctStr(hiVal)), value: "" },
           { label: S.transfer.r1Votes, value: C.fmtInt(c.r1_votes, locale) },
         ];
-        if (c.poorly_identified) rows.push({ label: S.transfer.poorlyIdentified, value: "" });
-        return { title: r.label.replace(" †", ""), rows: rows.filter((x) => x.value !== "" || x.label) };
+        return { title: r.label, rows: rows.filter((x) => x.value !== "" || x.label) };
       },
     });
   }
