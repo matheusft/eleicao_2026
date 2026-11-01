@@ -304,6 +304,13 @@
     });
   }
 
+  // Lula's national round-2 two-candidate share, read from the data (not
+  // hard-coded), used as the reference line in the funnel chart.
+  function lulaNationalR2() {
+    const row = (D.national.round2 || []).find((d) => d[0] === "Lula");
+    return row ? row[1] : 50;
+  }
+
   // ---------------- 3. Funnel ----------------
   function renderFunnel(S, locale) {
     const CL = col();
@@ -334,7 +341,7 @@
       hlines: [
         { y: 90, cls: "refline-dotted" },
         { y: 10, cls: "refline-dotted" },
-        { y: 51.79, cls: "refline" },
+        { y: lulaNationalR2(), cls: "refline" },
       ],
       legend: [
         { color: CL.muted, label: S.funnel.legendOther },
