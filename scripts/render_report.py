@@ -509,6 +509,8 @@ tr:hover td {{ background: var(--surface-1); }}
 }}
 
 .chart-svg .track-outline {{ stroke: var(--border); stroke-width: 1; }}
+.chart-svg .ci-whisker {{ stroke-width: 1.6; opacity: 0.9; }}
+.chart-svg .ci-point {{ opacity: 1; }}
 
 .callout {{
   border-radius: 10px; padding: 16px 20px; margin: 18px 0; font-size: 14.5px;
@@ -526,38 +528,6 @@ tr:hover td {{ background: var(--surface-1); }}
 footer {{ padding: 40px 0 80px; color: var(--text-muted); font-size: 13px; }}
 footer a {{ color: var(--text-muted); }}
 code {{ font-family: var(--mono); background: var(--surface-1); padding: 1px 5px; border-radius: 4px; font-size: 0.92em; }}
-</style>
-
-<div class="controls">
-  <div class="lang-toggle" role="group" aria-label="Language / Idioma">
-    <button type="button" class="lang-btn" data-set-lang="en" aria-pressed="true">EN</button>
-    <button type="button" class="lang-btn" data-set-lang="pt" aria-pressed="false">PT-BR</button>
-  </div>
-  <div class="lang-toggle" role="group" aria-label="Theme / Tema">
-    <button type="button" class="lang-btn" data-set-theme="light" aria-pressed="false">{B("span", "Light", "Claro")}</button>
-    <button type="button" class="lang-btn" data-set-theme="dark" aria-pressed="false">{B("span", "Dark", "Escuro")}</button>
-  </div>
-</div>
-
-.chart-svg .ci-whisker {{ stroke-width: 1.6; opacity: 0.9; }}
-.chart-svg .ci-point {{ opacity: 1; }}
-<header class="masthead">
-  <div class="wrap">
-    <div class="kicker">{B("span", "Statistical forensics · Brazil 2026 Presidential Election", "Perícia estatística · Eleição Presidencial do Brasil 2026")}</div>
-    {B("h1", "Were round-2 high-concentration zones a sign of fraud, or of Brazilian political geography?", "As zonas de alta concentração de votos no 2º turno são sinal de fraude, ou de geografia política brasileira?", cls="title")}
-    {B("p", f"A ground-up statistical audit of the official TSE results for both rounds: zone-by-zone concentration analysis, a chance-model Monte&nbsp;Carlo simulation, digit tests, and a round&#8209;1-vs-round&#8209;2 consistency check across all {fnum(summary['n_total_zones_r2'],'en')} electoral zones.", f"Uma auditoria estatística, construída do zero, dos resultados oficiais do TSE nos dois turnos: análise zona a zona da concentração de votos, uma simulação de Monte&nbsp;Carlo com modelo de acaso, testes de dígitos e uma verificação de consistência entre 1º e 2º turno em todas as {fnum(summary['n_total_zones_r2'],'pt')} zonas eleitorais.", cls="dek")}
-    <div class="meta-row">
-      {B("span", "Source: TSE dadosabertos.tse.jus.br — official results only", "Fonte: TSE dadosabertos.tse.jus.br — apenas resultados oficiais")}
-      {B("span", "Round 1: 2026-10-04 · Round 2: 2026-10-25", "1º turno: 04/10/2026 · 2º turno: 25/10/2026")}
-    </div>
-    <nav class="toc">
-      <a href="#integrity"><span class="n">01</span>{B("span", "Can we trust the numbers?", "Podemos confiar nos números?")}</a>
-      <a href="#headline"><span class="n">02</span>{B("span", "Headline result", "Resultado principal")}</a>
-      <a href="#landslides"><span class="n">03</span>{B("span", "Are 90%+ zones unusual?", "Zonas com 90%+ são incomuns?")}</a>
-      <a href="#montecarlo"><span class="n">04</span>{B("span", "Could it happen by chance?", "Pode acontecer por acaso?")}</a>
-      <a href="#robustness"><span class="n">05</span>{B("span", "Does this hold up?", "Isso se sustenta?")}</a>
-      <a href="#consistency"><span class="n">06</span>{B("span", "Sudden, or pre-existing?", "Súbito, ou pré-existente?")}</a>
-      <a href="#transfers"><span class="n">07</span>{B("span", "Where did the votes go?", "Para onde foram os votos?")}</a>
 
 /* --- inline term tooltips (assumptions / definitions) --- */
 .has-tip {{
@@ -615,6 +585,36 @@ td.winner-cell {{ text-align: center; }}
 .mini-legend .mi {{ display: inline-flex; align-items: center; gap: 6px; }}
 .mini-legend .sw {{ width: 22px; height: 0; border-top-width: 2px; border-top-style: solid; display: inline-block; }}
 .mini-legend .sw.band {{ height: 11px; border: none; border-radius: 2px; }}
+</style>
+
+<div class="controls">
+  <div class="lang-toggle" role="group" aria-label="Language / Idioma">
+    <button type="button" class="lang-btn" data-set-lang="en" aria-pressed="true">🇬🇧</button>
+    <button type="button" class="lang-btn" data-set-lang="pt" aria-pressed="false">🇧🇷</button>
+  </div>
+  <div class="lang-toggle" role="group" aria-label="Theme / Tema">
+    <button type="button" class="lang-btn" data-set-theme="light" aria-pressed="false">{B("span", "☀️", "☀️")}</button>
+    <button type="button" class="lang-btn" data-set-theme="dark" aria-pressed="false">{B("span", "🌙", "🌙")}</button>
+  </div>
+</div>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="kicker">{B("span", "Statistical forensics · Brazil 2026 Presidential Election", "Perícia estatística · Eleição Presidencial do Brasil 2026")}</div>
+    {B("h1", "Were round-2 high-concentration zones a sign of fraud, or of Brazilian political geography?", "As zonas de alta concentração de votos no 2º turno são sinal de fraude, ou de geografia política brasileira?", cls="title")}
+    {B("p", f"A ground-up statistical audit of the official TSE results for both rounds: zone-by-zone concentration analysis, a chance-model Monte&nbsp;Carlo simulation, digit tests, and a round&#8209;1-vs-round&#8209;2 consistency check across all {fnum(summary['n_total_zones_r2'],'en')} electoral zones.", f"Uma auditoria estatística, construída do zero, dos resultados oficiais do TSE nos dois turnos: análise zona a zona da concentração de votos, uma simulação de Monte&nbsp;Carlo com modelo de acaso, testes de dígitos e uma verificação de consistência entre 1º e 2º turno em todas as {fnum(summary['n_total_zones_r2'],'pt')} zonas eleitorais.", cls="dek")}
+    <div class="meta-row">
+      {B("span", "Source: TSE dadosabertos.tse.jus.br — official results only", "Fonte: TSE dadosabertos.tse.jus.br — apenas resultados oficiais")}
+      {B("span", "Round 1: 2026-10-04 · Round 2: 2026-10-25", "1º turno: 04/10/2026 · 2º turno: 25/10/2026")}
+    </div>
+    <nav class="toc">
+      <a href="#integrity"><span class="n">01</span>{B("span", "Can we trust the numbers?", "Podemos confiar nos números?")}</a>
+      <a href="#headline"><span class="n">02</span>{B("span", "Headline result", "Resultado principal")}</a>
+      <a href="#landslides"><span class="n">03</span>{B("span", "Are 90%+ zones unusual?", "Zonas com 90%+ são incomuns?")}</a>
+      <a href="#montecarlo"><span class="n">04</span>{B("span", "Could it happen by chance?", "Pode acontecer por acaso?")}</a>
+      <a href="#robustness"><span class="n">05</span>{B("span", "Does this hold up?", "Isso se sustenta?")}</a>
+      <a href="#consistency"><span class="n">06</span>{B("span", "Sudden, or pre-existing?", "Súbito, ou pré-existente?")}</a>
+      <a href="#transfers"><span class="n">07</span>{B("span", "Where did the votes go?", "Para onde foram os votos?")}</a>
       <a href="#turnout"><span class="n">08</span>{B("span", "Turnout &amp; swing check", "Comparecimento e variação de votos")}</a>
       <a href="#blanknull"><span class="n">09</span>{B("span", "Blank &amp; spoiled votes", "Votos em branco e nulos")}</a>
       <a href="#digits"><span class="n">10</span>{B("span", "Digit tests", "Testes de dígitos")}</a>
