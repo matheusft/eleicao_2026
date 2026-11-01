@@ -107,6 +107,15 @@
         round1: "Round 1",
         round2: "Round 2",
       },
+      capture: {
+        xLabel: "How the zone leaned in round 1 (Lula's two-candidate %)",
+        yLabel: "Share of the net new votes that went to Lula (%)",
+        lulaCap: "Lula got ≥100%",
+        flavioCap: "Flávio got ≥100%",
+        other: "shared between them",
+        lean: "Round-1 lean",
+        share: "Lula's share of the gain",
+      },
     },
     pt: {
       locale: "pt-BR",
@@ -203,6 +212,15 @@
         nulls: "Votos nulos",
         round1: "1º turno",
         round2: "2º turno",
+      },
+      capture: {
+        xLabel: "Inclinação da zona no 1º turno (% de Lula entre os dois)",
+        yLabel: "Percentual dos votos novos que foi para Lula (%)",
+        lulaCap: "Lula ficou com ≥100%",
+        flavioCap: "Flávio ficou com ≥100%",
+        other: "dividido entre os dois",
+        lean: "Inclinação no 1º turno",
+        share: "Percentual do ganho para Lula",
       },
     },
   };
@@ -671,6 +689,71 @@
     });
   }
 
+  // ---------------- 12. Between-round "capture" ----------------
+  // Each zone's round-1 lean (x) against Lula's share of the net two-finalist
+  // gain between rounds (y). A smooth upward cloud — the more a zone leaned
+  // Lula, the more of the new votes he took — shows ordinary consolidation,
+  // not a separate population. Points at/above 100% are "Lula got everything";
+  // at/below 0% are "Flávio got everything".
+  function renderCapture(S, locale) {
+    const CL = col();
+    const pts0 = [];
+    D.zones.forEach((z) => {
+      if (z[P1] === null || !(z[N1] > 0)) return;
+      const n2 = z[N], n1 = z[N1];
+      const dL = n2 * z[P2] - n1 * z[P1];
+      const dF = n2 * (1 - z[P2]) - n1 * (1 - z[P1]);
+      const net = dL + dF;
+      if (net <= 30) return; // ratio is meaningless for a handful of swing votes
+      pts0.push({ z: z, dL: dL, dF: dF, lean: z[P1] * 100, share: (dL / net) * 100 });
+    });
+    const points = pts0.map((p) => {
+      const cap = p.share >= 100 ? "lula" : p.share <= 0 ? "flavio" : "other";
+      return {
+        x: p.lean,
+        y: Math.max(-50, Math.min(150, p.share)),
+        color: cap === "lula" ? CL.lula : cap === "flavio" ? CL.flavio : CL.muted,
+        op: cap === "other" ? 0.22 : 0.8,
+        r: cap === "other" ? 1.7 : 2.6,
+        meta: p,
+      };
+    });
+    C.renderScatter("chart-capture", points, {
+      width: 760,
+      height: 460,
+      margin: { top: 16, right: 150, bottom: 50, left: 60 },
+      xType: "linear",
+      xDomain: [0, 100],
+      yDomain: [-55, 155],
+      xLabel: S.capture.xLabel,
+      yLabel: S.capture.yLabel,
+      xTickFormat: (v) => v + "%",
+      yTickFormat: (v) => v + "%",
+      hlines: [
+        { y: 100, cls: "refline-dotted" },
+        { y: 0, cls: "refline-dotted" },
+        { y: 50, cls: "refline" },
+      ],
+      legend: [
+        { color: CL.lula, label: S.capture.lulaCap },
+        { color: CL.flavio, label: S.capture.flavioCap },
+        { color: CL.muted, label: S.capture.other },
+      ],
+      tooltipFn: (pt) => {
+        const m = pt.meta, z = m.z;
+        return {
+          title: `${zoneTitle(z, S)} · #${z[ZONA]}`,
+          rows: [
+            { label: S.capture.lean, value: C.fmtPct(m.lean, 0, locale) },
+            { label: "Lula", value: (m.dL >= 0 ? "+" : "−") + C.fmtInt(Math.abs(Math.round(m.dL)), locale), color: CL.lula },
+            { label: "Flávio", value: (m.dF >= 0 ? "+" : "−") + C.fmtInt(Math.abs(Math.round(m.dF)), locale), color: CL.flavio },
+            { label: S.capture.share, value: C.fmtPct(m.share, 0, locale) },
+          ],
+        };
+      },
+    });
+  }
+
   // ---------------- Chart search boxes (Figure 3, Figure 5) ----------------
   // Wired once per chart (the input/dropdown/clear-button DOM is static,
   // server-rendered HTML that survives chart re-renders); only the scatter
@@ -824,6 +907,7 @@
     renderStateTurnout(S, locale);
     renderVoteTransfer(S, locale);
     renderBlankNull(S, locale);
+    renderCapture(S, locale);
 
     // The charts underneath the search boxes were just torn down and
     // rebuilt (new highlight circle, new handle), so any previous
