@@ -431,7 +431,7 @@ a {{ color: var(--accent); }}
   position: fixed; z-index: 1000; display: none; pointer-events: none;
   background: var(--surface-card); border: 1px solid var(--border); border-radius: 8px;
   padding: 10px 13px; font-size: 12.5px; box-shadow: 0 4px 18px rgba(0,0,0,0.18);
-  max-width: 260px; font-family: var(--sans);
+  max-width: 340px; font-family: var(--sans);
 }}
 .chart-tooltip .tt-title {{ font-weight: 650; margin-bottom: 6px; color: var(--text-primary); }}
 .chart-tooltip .tt-row {{ display: flex; align-items: center; gap: 6px; margin: 3px 0; color: var(--text-secondary); }}
