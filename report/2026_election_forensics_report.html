@@ -988,8 +988,14 @@ td.winner-cell { text-align: center; }
   <p lang="en" class="i18n-block">How often does it happen? Lula captured 100%+ of the net new votes in <strong>795 zones (12.7%)</strong>; Flávio did in <strong>10 zones (0.2%)</strong>. That looks lopsided — but it is the national swing restated. Because the runoff moved toward Lula (higher turnout, fewer blank/null votes, and the eliminated candidates breaking his way — see <a href="#transfers">§7</a> and <a href="#turnout">§8</a>), Lula's total rose almost everywhere: Flávio's total failed to rise in 16% of zones, Lula's in only 2%. Wherever the opponent stalls, the other candidate mechanically "gets 100%."</p><p lang="pt" class="i18n-block">Com que frequência isso acontece? Lula capturou 100%+ dos votos novos em <strong>795 zonas (12,7%)</strong>; Flávio, em <strong>10 zonas (0,2%)</strong>. Parece desproporcional — mas é a variação nacional reformulada. Como o 2º turno se moveu para Lula (maior comparecimento, menos votos em branco/nulos, e os candidatos eliminados pendendo para ele — veja <a href="#transfers">§7</a> e <a href="#turnout">§8</a>), o total de Lula subiu em quase todo lugar: o total de Flávio deixou de subir em 16% das zonas, e o de Lula em apenas 2%. Onde o adversário empaca, o outro candidato fica "com 100%" por pura mecânica.</p>
 
   <div class="exhibit">
+    <div class="chart-search" id="capture-search">
+      <svg class="chart-search-icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5.2" fill="none" stroke="currentColor" stroke-width="1.4"/><line x1="11" y1="11" x2="15" y2="15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <input type="text" id="capture-search-input" class="chart-search-input" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="capture-search-results" aria-autocomplete="list">
+      <button type="button" id="capture-search-clear" class="chart-search-clear" hidden>&times;</button>
+      <ul id="capture-search-results" class="chart-search-results" role="listbox" hidden></ul>
+    </div>
     <div id="chart-capture" class="chart-container" style="min-height:420px"></div>
-    <div lang="en" class="i18n-block cap">Figure 11. Each dot is an electoral zone with a meaningful number of swing votes. Horizontal: how the zone leaned in round 1 (Lula's two-candidate share). Vertical: Lula's share of the net new votes between rounds — 100% means all of them went to Lula, 0% means all went to Flávio, and above 100% means a candidate also took votes the other one lost. The smooth upward cloud is the tell: the "capture" is a function of how the zone already voted, not a separate population. Hover or tap a dot for the zone and its between-round gains.</div><div lang="pt" class="i18n-block cap">Figura 11. Cada ponto é uma zona eleitoral com um número relevante de votos que mudaram. Horizontal: como a zona pendia no 1º turno (percentual de Lula entre os dois). Vertical: o percentual dos votos novos entre os turnos que foi para Lula — 100% significa que todos foram para Lula, 0% que todos foram para Flávio, e acima de 100% significa que um candidato também pegou votos que o outro perdeu. A nuvem que sobe de forma suave é o indício: a "captura" é uma função de como a zona já votava, não uma população à parte. Passe o mouse ou toque em um ponto para ver a zona e os ganhos entre os turnos.</div>
+    <div lang="en" class="i18n-block cap">Figure 11. Each dot is an electoral zone with a meaningful number of swing votes. Horizontal: how the zone leaned in round 1 (Lula's two-candidate share). Vertical: Lula's share of the net new votes between rounds — 100% means all of them went to Lula, 0% means all went to Flávio, and above 100% means a candidate also took votes the other one lost. The smooth upward cloud is the tell: the "capture" is a function of how the zone already voted, not a separate population. Use the search box above to jump to a municipality; hover or tap a dot for each candidate's share and vote total in both rounds.</div><div lang="pt" class="i18n-block cap">Figura 11. Cada ponto é uma zona eleitoral com um número relevante de votos que mudaram. Horizontal: como a zona pendia no 1º turno (percentual de Lula entre os dois). Vertical: o percentual dos votos novos entre os turnos que foi para Lula — 100% significa que todos foram para Lula, 0% que todos foram para Flávio, e acima de 100% significa que um candidato também pegou votos que o outro perdeu. A nuvem que sobe de forma suave é o indício: a "captura" é uma função de como a zona já votava, não uma população à parte. Use a busca acima para ir a um município; passe o mouse ou toque em um ponto para ver o percentual e o total de votos de cada candidato nos dois turnos.</div>
   </div>
 
   <div class="callout ok">
@@ -1825,6 +1831,7 @@ window.CHART_DATA = JSON.parse(document.getElementById('chart-data-json').textCo
   const [UF, MUN, ZONA, ABROAD, N, P2, P1, DTURN, SWING, N1] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
   let funnelHandle = null; // set by renderFunnel(); used by the Figure 3 search box
   let r1vsr2Handle = null; // set by renderR1vsR2(); used by the Figure 5 search box
+  let captureHandle = null; // set by renderCapture(); used by the Figure 11 search box
 
   const I18N = {
     en: {
@@ -1929,7 +1936,7 @@ window.CHART_DATA = JSON.parse(document.getElementById('chart-data-json').textCo
         lulaCap: "Lula got ≥100%",
         flavioCap: "Flávio got ≥100%",
         other: "shared between them",
-        lean: "Round-1 lean",
+        total: "Total votes",
         share: "Lula's share of the gain",
       },
     },
@@ -2035,7 +2042,7 @@ window.CHART_DATA = JSON.parse(document.getElementById('chart-data-json').textCo
         lulaCap: "Lula ficou com ≥100%",
         flavioCap: "Flávio ficou com ≥100%",
         other: "dividido entre os dois",
-        lean: "Inclinação no 1º turno",
+        total: "Total de votos",
         share: "Percentual do ganho para Lula",
       },
     },
@@ -2511,8 +2518,9 @@ window.CHART_DATA = JSON.parse(document.getElementById('chart-data-json').textCo
   // Lula, the more of the new votes he took — shows ordinary consolidation,
   // not a separate population. Points at/above 100% are "Lula got everything";
   // at/below 0% are "Flávio got everything".
-  function renderCapture(S, locale) {
-    const CL = col();
+  // Deterministic filter/compute shared by the chart and its search box, so
+  // the search index lines up 1:1 with the chart's point index.
+  function captureData() {
     const pts0 = [];
     D.zones.forEach((z) => {
       if (z[P1] === null || !(z[N1] > 0)) return;
@@ -2523,6 +2531,12 @@ window.CHART_DATA = JSON.parse(document.getElementById('chart-data-json').textCo
       if (net <= 30) return; // ratio is meaningless for a handful of swing votes
       pts0.push({ z: z, dL: dL, dF: dF, lean: z[P1] * 100, share: (dL / net) * 100 });
     });
+    return pts0;
+  }
+
+  function renderCapture(S, locale) {
+    const CL = col();
+    const pts0 = captureData();
     const points = pts0.map((p) => {
       const cap = p.share >= 100 ? "lula" : p.share <= 0 ? "flavio" : "other";
       return {
@@ -2534,7 +2548,7 @@ window.CHART_DATA = JSON.parse(document.getElementById('chart-data-json').textCo
         meta: p,
       };
     });
-    C.renderScatter("chart-capture", points, {
+    captureHandle = C.renderScatter("chart-capture", points, {
       width: 760,
       height: 460,
       margin: { top: 16, right: 150, bottom: 50, left: 60 },
@@ -2557,15 +2571,11 @@ window.CHART_DATA = JSON.parse(document.getElementById('chart-data-json').textCo
       ],
       tooltipFn: (pt) => {
         const m = pt.meta, z = m.z;
-        return {
-          title: `${zoneTitle(z, S)} · #${z[ZONA]}`,
-          rows: [
-            { label: S.capture.lean, value: C.fmtPct(m.lean, 0, locale) },
-            { label: "Lula", value: (m.dL >= 0 ? "+" : "−") + C.fmtInt(Math.abs(Math.round(m.dL)), locale), color: CL.lula },
-            { label: "Flávio", value: (m.dF >= 0 ? "+" : "−") + C.fmtInt(Math.abs(Math.round(m.dF)), locale), color: CL.flavio },
-            { label: S.capture.share, value: C.fmtPct(m.share, 0, locale) },
-          ],
-        };
+        // Per-candidate shares and totals (round 1 → round 2), plus the
+        // chart's own metric (Lula's share of the net between-round gain).
+        const rows = zoneShareRows(z, locale, S.capture.total);
+        rows.push({ label: S.capture.share, value: C.fmtPct(m.share, 0, locale) });
+        return { title: `${zoneTitle(z, S)} · #${z[ZONA]}`, rows };
       },
     });
   }
@@ -2729,7 +2739,7 @@ window.CHART_DATA = JSON.parse(document.getElementById('chart-data-json').textCo
     // rebuilt (new highlight circle, new handle), so any previous
     // selection no longer points at anything real -- reset the search
     // UI to match.
-    ["funnel", "r1vsr2"].forEach((idPrefix) => {
+    ["funnel", "r1vsr2", "capture"].forEach((idPrefix) => {
       const searchInput = document.getElementById(`${idPrefix}-search-input`);
       const searchClear = document.getElementById(`${idPrefix}-search-clear`);
       if (searchInput) {
@@ -2761,6 +2771,12 @@ window.CHART_DATA = JSON.parse(document.getElementById('chart-data-json').textCo
     zones: D.zones.filter((z) => z[P1] !== null),
     chartContainerId: "chart-r1-vs-r2",
     getHandle: () => r1vsr2Handle,
+  });
+  setupChartSearch({
+    idPrefix: "capture",
+    zones: captureData().map((p) => p.z),
+    chartContainerId: "chart-capture",
+    getHandle: () => captureHandle,
   });
 
   // Re-render with new colors/text when the viewer toggles light/dark theme
