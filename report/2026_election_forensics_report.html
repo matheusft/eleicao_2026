@@ -429,7 +429,8 @@ td.winner-cell { text-align: center; }
       <a href="#blanknull"><span class="n">09</span><span lang="en" class="i18n-block">Blank &amp; spoiled votes</span><span lang="pt" class="i18n-block">Votos em branco e nulos</span></a>
       <a href="#digits"><span class="n">10</span><span lang="en" class="i18n-block">Digit tests</span><span lang="pt" class="i18n-block">Testes de dígitos</span></a>
       <a href="#geography"><span class="n">11</span><span lang="en" class="i18n-block">Regional context</span><span lang="pt" class="i18n-block">Contexto regional</span></a>
-      <a href="#findings"><span class="n">12</span><span lang="en" class="i18n-block">Findings &amp; limits</span><span lang="pt" class="i18n-block">Conclusões e limites</span></a>
+      <a href="#capture"><span class="n">12</span><span lang="en" class="i18n-block">All the swing votes?</span><span lang="pt" class="i18n-block">Todos os votos que mudaram?</span></a>
+      <a href="#findings"><span class="n">13</span><span lang="en" class="i18n-block">Findings &amp; limits</span><span lang="pt" class="i18n-block">Conclusões e limites</span></a>
     </nav>
   </div>
 </header>
@@ -978,8 +979,32 @@ td.winner-cell { text-align: center; }
   <div class="takeaway"><span lang="en" class="i18n-block takeaway-label">In plain terms</span><span lang="pt" class="i18n-block takeaway-label">Em termos simples</span><span lang="en" class="i18n-block takeaway-body">The map of support looks like Brazil's recent elections: the same regions lean the same ways, and the shift between rounds is gentle and consistent everywhere. Nothing here departs from how the country is known to vote.</span><span lang="pt" class="i18n-block takeaway-body">O mapa do apoio se parece com as eleições recentes do Brasil: as mesmas regiões pendem para os mesmos lados, e a mudança entre os turnos é suave e consistente em todo lugar. Nada aqui foge de como se sabe que o país vota.</span></div>
 </section>
 
+<section id="capture">
+  <h2><span class="num">12</span><span lang="en" class="i18n-block">Did one candidate get all the swing votes?</span><span lang="pt" class="i18n-block">Um candidato ficou com todos os votos que mudaram?</span></h2>
+  <p lang="en" class="i18n-block lede">A striking claim circulates about this election: in some places one candidate picked up essentially <em>all</em> of the extra votes between round 1 and round 2 — every eliminated-candidate voter, every recovered blank or null, every newly-turned-out voter — while the other candidate gained nothing. It is true. In Codó (MA), for instance, Lula's total rose by 5,400 between the rounds while Flávio's <em>fell</em> by 110 — Lula captured more than 100% of the net new votes. Does that prove the count was steered? No. This section asks the obvious follow-up questions — does it happen to the other candidate, how often, and could it happen without anyone inventing a vote — and the answers show why it is a mirage.</p><p lang="pt" class="i18n-block lede">Circula uma afirmação impactante sobre esta eleição: em alguns lugares, um candidato ficou com praticamente <em>todos</em> os votos a mais entre o 1º e o 2º turno — cada eleitor de candidato eliminado, cada voto em branco ou nulo recuperado, cada eleitor que passou a comparecer — enquanto o outro candidato não ganhou nada. É verdade. Em Codó (MA), por exemplo, o total de Lula subiu 5.400 entre os turnos, enquanto o de Flávio <em>caiu</em> 110 — Lula capturou mais de 100% dos votos novos. Isso prova que a apuração foi dirigida? Não. Esta seção faz as perguntas óbvias seguintes — isso acontece com o outro candidato, com que frequência, e poderia acontecer sem ninguém inventar um voto — e as respostas mostram por que é uma miragem.</p>
+
+  <p lang="en" class="i18n-block">First, what "100%" means here. For each zone we take the two finalists' combined gain between rounds — the net new votes that landed with a finalist — and ask what share went to Lula. "100% to Lula" simply means <strong>Flávio's total did not rise in that zone</strong>; nothing was added to Lula's pile that wasn't a real vote. It is a ratio, and like any ratio it swings to 100% the moment the bottom number (the opponent's gain) drops to zero.</p><p lang="pt" class="i18n-block">Primeiro, o que "100%" significa aqui. Para cada zona, pegamos o ganho combinado dos dois finalistas entre os turnos — os votos novos que foram para um finalista — e perguntamos qual fração foi para Lula. "100% para Lula" significa apenas que <strong>o total de Flávio não subiu naquela zona</strong>; nada foi acrescentado à conta de Lula que não fosse um voto real. É uma razão e, como toda razão, salta para 100% assim que o número de baixo (o ganho do adversário) chega a zero.</p>
+
+  <p lang="en" class="i18n-block">How often does it happen? Lula captured 100%+ of the net new votes in <strong>795 zones (12.7%)</strong>; Flávio did in <strong>10 zones (0.2%)</strong>. That looks lopsided — but it is the national swing restated. Because the runoff moved toward Lula (higher turnout, fewer blank/null votes, and the eliminated candidates breaking his way — see <a href="#transfers">§7</a> and <a href="#turnout">§8</a>), Lula's total rose almost everywhere: Flávio's total failed to rise in 16% of zones, Lula's in only 2%. Wherever the opponent stalls, the other candidate mechanically "gets 100%."</p><p lang="pt" class="i18n-block">Com que frequência isso acontece? Lula capturou 100%+ dos votos novos em <strong>795 zonas (12,7%)</strong>; Flávio, em <strong>10 zonas (0,2%)</strong>. Parece desproporcional — mas é a variação nacional reformulada. Como o 2º turno se moveu para Lula (maior comparecimento, menos votos em branco/nulos, e os candidatos eliminados pendendo para ele — veja <a href="#transfers">§7</a> e <a href="#turnout">§8</a>), o total de Lula subiu em quase todo lugar: o total de Flávio deixou de subir em 16% das zonas, e o de Lula em apenas 2%. Onde o adversário empaca, o outro candidato fica "com 100%" por pura mecânica.</p>
+
+  <div class="exhibit">
+    <div id="chart-capture" class="chart-container" style="min-height:420px"></div>
+    <div lang="en" class="i18n-block cap">Figure 11. Each dot is an electoral zone with a meaningful number of swing votes. Horizontal: how the zone leaned in round 1 (Lula's two-candidate share). Vertical: Lula's share of the net new votes between rounds — 100% means all of them went to Lula, 0% means all went to Flávio, and above 100% means a candidate also took votes the other one lost. The smooth upward cloud is the tell: the "capture" is a function of how the zone already voted, not a separate population. Hover or tap a dot for the zone and its between-round gains.</div><div lang="pt" class="i18n-block cap">Figura 11. Cada ponto é uma zona eleitoral com um número relevante de votos que mudaram. Horizontal: como a zona pendia no 1º turno (percentual de Lula entre os dois). Vertical: o percentual dos votos novos entre os turnos que foi para Lula — 100% significa que todos foram para Lula, 0% que todos foram para Flávio, e acima de 100% significa que um candidato também pegou votos que o outro perdeu. A nuvem que sobe de forma suave é o indício: a "captura" é uma função de como a zona já votava, não uma população à parte. Passe o mouse ou toque em um ponto para ver a zona e os ganhos entre os turnos.</div>
+  </div>
+
+  <div class="callout ok">
+    <span lang="en" class="i18n-block"><b>It tracks how each zone already leaned — the fingerprint of ordinary consolidation.</b> The more a zone leaned Lula in round 1, the larger his share of the new votes (correlation 0.66): in his strongholds the third-way and newly-turned-out voters break his way, exactly as they break Flávio's way in Flávio country. The same "100%+" happens for Flávio where he outgrew Lula — for example Belo Monte (AL), where Flávio gained 440 and Lula <em>lost</em> 304. By the viral logic, "Flávio stole 304 votes from Lula" there — in reality both are just ordinary runoff swings, pointing in opposite directions.</span><span lang="pt" class="i18n-block"><b>Acompanha como cada zona já pendia — a marca da consolidação comum.</b> Quanto mais uma zona pendia para Lula no 1º turno, maior o seu percentual dos votos novos (correlação 0,66): nos seus redutos, os eleitores de terceira via e os que passaram a comparecer pendem para ele, exatamente como pendem para Flávio no território de Flávio. O mesmo "100%+" acontece para Flávio onde ele cresceu mais que Lula — por exemplo Belo Monte (AL), onde Flávio ganhou 440 e Lula <em>perdeu</em> 304. Pela lógica viral, "Flávio roubou 304 votos de Lula" ali — na realidade, ambos são apenas variações comuns de 2º turno, em direções opostas.</span>
+  </div>
+
+  <div class="callout ok">
+    <span lang="en" class="i18n-block"><b>And no votes are invented.</b> In every one of these zones the winner's gain fits entirely inside the real pool of available voters — the round-1 third-way, blank and null votes, plus any extra turnout, plus any voters the opponent lost. Across all 6,250 zones the most any candidate took was 100.0% of that real pool, <strong>0</strong> zones required more than existed, and (from <a href="#integrity">§1</a>) <strong>0</strong> zones recorded more voters than the registered electorate. "100% of the swing votes" is 100% of a real, finite pool of people who actually turned out — not phantom ballots.</span><span lang="pt" class="i18n-block"><b>E nenhum voto é inventado.</b> Em cada uma dessas zonas, o ganho do vencedor cabe inteiramente dentro do conjunto real de eleitores disponíveis — os votos de terceira via, brancos e nulos do 1º turno, mais qualquer comparecimento extra, mais os eleitores que o adversário perdeu. Em todas as 6.250 zonas, o máximo que qualquer candidato tomou foi 100,0% desse conjunto real, <strong>0</strong> zonas exigiram mais do que existia, e (da <a href="#integrity">§1</a>) <strong>0</strong> zonas registraram mais eleitores do que o eleitorado. "100% dos votos que mudaram" é 100% de um conjunto real e finito de pessoas que de fato compareceram — não cédulas fantasmas.</span>
+  </div>
+
+  <div class="takeaway"><span lang="en" class="i18n-block takeaway-label">In plain terms</span><span lang="pt" class="i18n-block takeaway-label">Em termos simples</span><span lang="en" class="i18n-block takeaway-body">"One candidate got 100% of the extra votes" sounds alarming but is just arithmetic: it means the other candidate didn't grow there. It happens for both, it tracks how each place already voted, and it never requires a single invented vote. It is the swing toward Lula seen through a jumpy ratio — not a signature of fraud.</span><span lang="pt" class="i18n-block takeaway-body">"Um candidato ficou com 100% dos votos a mais" soa alarmante, mas é só aritmética: significa que o outro candidato não cresceu ali. Acontece com os dois, acompanha como cada lugar já votava, e nunca exige um único voto inventado. É a variação a favor de Lula vista através de uma razão instável — não uma assinatura de fraude.</span></div>
+</section>
+
 <section id="findings">
-  <h2><span class="num">12</span><span lang="en" class="i18n-block">Findings register, and what this can't tell us</span><span lang="pt" class="i18n-block">Registro de achados, e o que isto não consegue dizer</span></h2>
+  <h2><span class="num">13</span><span lang="en" class="i18n-block">Findings register, and what this can't tell us</span><span lang="pt" class="i18n-block">Registro de achados, e o que isto não consegue dizer</span></h2>
   <p lang="en" class="i18n-block lede">This section does two things a serious audit should always do explicitly: list every finding with a plain classification of how strong it is, and say — specifically, not vaguely — what questions this dataset cannot answer and what would be needed to answer them.</p><p lang="pt" class="i18n-block lede">Esta seção faz duas coisas que uma auditoria séria sempre deveria fazer de forma explícita: listar cada achado com uma classificação clara de quão forte ele é, e dizer — de forma específica, não vaga — quais perguntas este conjunto de dados não consegue responder e o que seria necessário para respondê-las.</p>
 
   <h3 lang="en" class="i18n-block">Findings register</h3><h3 lang="pt" class="i18n-block">Registro de achados</h3>
@@ -1000,6 +1025,7 @@ td.winner-cell { text-align: center; }
       <tr><td><span lang="en" class="i18n-block">Blank/spoiled vote rates (§9)</span><span lang="pt" class="i18n-block">Taxas de votos em branco/nulos (§9)</span></td><td><span lang="en" class="i18n-block"><span class="pill pill-d">Descriptive only</span></span><span lang="pt" class="i18n-block"><span class="pill pill-d">Apenas descritivo</span></span></td><td><span lang="en" class="i18n-block">No formal outlier test run on state-level rates in this pass — see limitations below.</span><span lang="pt" class="i18n-block">Nenhum teste formal de valores atípicos rodado sobre as taxas por estado nesta etapa — veja as limitações abaixo.</span></td></tr>
       <tr><td><span lang="en" class="i18n-block">Last-digit forensic tests (§10)</span><span lang="pt" class="i18n-block">Testes forenses de último dígito (§10)</span></td><td><span lang="en" class="i18n-block"><span class="pill pill-e">E — No anomaly</span></span><span lang="pt" class="i18n-block"><span class="pill pill-e">E — Sem anomalia</span></span></td><td><span lang="en" class="i18n-block">Chi-square does not reject uniformity for either candidate or municipality totals; known limited test power.</span><span lang="pt" class="i18n-block">Qui-quadrado não rejeita a uniformidade para nenhum candidato nem para os totais por município; poder de teste reconhecidamente limitado.</span></td></tr>
       <tr><td><span lang="en" class="i18n-block">Regional / political-geography consistency (§11)</span><span lang="pt" class="i18n-block">Consistência regional / geografia política (§11)</span></td><td><span lang="en" class="i18n-block"><span class="pill pill-e">E — No anomaly</span></span><span lang="pt" class="i18n-block"><span class="pill pill-e">E — Sem anomalia</span></span></td><td><span lang="en" class="i18n-block">Matches Brazil's well-documented 2018/2022 regional pattern.</span><span lang="pt" class="i18n-block">Corresponde ao padrão regional bem documentado do Brasil em 2018/2022.</span></td></tr>
+      <tr><td><span lang="en" class="i18n-block">"100% of the swing votes" claim (§12)</span><span lang="pt" class="i18n-block">Alegação dos "100% dos votos que mudaram" (§12)</span></td><td><span lang="en" class="i18n-block"><span class="pill pill-e">E — No anomaly</span></span><span lang="pt" class="i18n-block"><span class="pill pill-e">E — Sem anomalia</span></span></td><td><span lang="en" class="i18n-block">True but a restatement of the swing through an unstable ratio; happens for both candidates, tracks zone lean, and never exceeds the real available pool (0 impossible zones).</span><span lang="pt" class="i18n-block">Verdadeira, mas é a variação reformulada por uma razão instável; ocorre para os dois candidatos, acompanha a inclinação da zona e nunca excede o conjunto real disponível (0 zonas impossíveis).</span></td></tr>
     </tbody>
   </table>
   </div>
@@ -1017,7 +1043,7 @@ td.winner-cell { text-align: center; }
 
   <h3 lang="en" class="i18n-block">Overall assessment</h3><h3 lang="pt" class="i18n-block">Avaliação geral</h3>
   <div class="verdict">
-    <h3 lang="en" class="i18n-block">No statistical signature consistent with fraud was found across any of the twelve analyses in this report.</h3><h3 lang="pt" class="i18n-block">Nenhuma assinatura estatística compatível com fraude foi encontrada em nenhuma das doze análises deste relatório.</h3>
+    <h3 lang="en" class="i18n-block">No statistical signature consistent with fraud was found across any of the thirteen analyses in this report.</h3><h3 lang="pt" class="i18n-block">Nenhuma assinatura estatística compatível com fraude foi encontrada em nenhuma das treze análises deste relatório.</h3>
     <ul>
       <li lang="en" class="i18n-block">The underlying data reconciles perfectly: zero duplicate records, zero reconciliation failures, zero impossible values, across every one of the 12,584 zone-round records checked.</li><li lang="pt" class="i18n-block">Os dados subjacentes se reconciliam perfeitamente: zero registros duplicados, zero falhas de reconciliação, zero valores impossíveis, em todos os 12.584 registros de zona-turno verificados.</li>
       <li lang="en" class="i18n-block">The frequency of 90%+ zones stays at or below what a chance-only null model predicts, across five independent robustness variants — the opposite of what manufactured results would look like.</li><li lang="pt" class="i18n-block">A frequência de zonas com 90%+ fica igual ou abaixo do que um modelo nulo de puro acaso prevê, em cinco variantes independentes de robustez — o oposto do que resultados fabricados pareceriam.</li>
@@ -1897,6 +1923,15 @@ window.CHART_DATA = JSON.parse(document.getElementById('chart-data-json').textCo
         round1: "Round 1",
         round2: "Round 2",
       },
+      capture: {
+        xLabel: "How the zone leaned in round 1 (Lula's two-candidate %)",
+        yLabel: "Share of the net new votes that went to Lula (%)",
+        lulaCap: "Lula got ≥100%",
+        flavioCap: "Flávio got ≥100%",
+        other: "shared between them",
+        lean: "Round-1 lean",
+        share: "Lula's share of the gain",
+      },
     },
     pt: {
       locale: "pt-BR",
@@ -1993,6 +2028,15 @@ window.CHART_DATA = JSON.parse(document.getElementById('chart-data-json').textCo
         nulls: "Votos nulos",
         round1: "1º turno",
         round2: "2º turno",
+      },
+      capture: {
+        xLabel: "Inclinação da zona no 1º turno (% de Lula entre os dois)",
+        yLabel: "Percentual dos votos novos que foi para Lula (%)",
+        lulaCap: "Lula ficou com ≥100%",
+        flavioCap: "Flávio ficou com ≥100%",
+        other: "dividido entre os dois",
+        lean: "Inclinação no 1º turno",
+        share: "Percentual do ganho para Lula",
       },
     },
   };
@@ -2461,6 +2505,71 @@ window.CHART_DATA = JSON.parse(document.getElementById('chart-data-json').textCo
     });
   }
 
+  // ---------------- 12. Between-round "capture" ----------------
+  // Each zone's round-1 lean (x) against Lula's share of the net two-finalist
+  // gain between rounds (y). A smooth upward cloud — the more a zone leaned
+  // Lula, the more of the new votes he took — shows ordinary consolidation,
+  // not a separate population. Points at/above 100% are "Lula got everything";
+  // at/below 0% are "Flávio got everything".
+  function renderCapture(S, locale) {
+    const CL = col();
+    const pts0 = [];
+    D.zones.forEach((z) => {
+      if (z[P1] === null || !(z[N1] > 0)) return;
+      const n2 = z[N], n1 = z[N1];
+      const dL = n2 * z[P2] - n1 * z[P1];
+      const dF = n2 * (1 - z[P2]) - n1 * (1 - z[P1]);
+      const net = dL + dF;
+      if (net <= 30) return; // ratio is meaningless for a handful of swing votes
+      pts0.push({ z: z, dL: dL, dF: dF, lean: z[P1] * 100, share: (dL / net) * 100 });
+    });
+    const points = pts0.map((p) => {
+      const cap = p.share >= 100 ? "lula" : p.share <= 0 ? "flavio" : "other";
+      return {
+        x: p.lean,
+        y: Math.max(-50, Math.min(150, p.share)),
+        color: cap === "lula" ? CL.lula : cap === "flavio" ? CL.flavio : CL.muted,
+        op: cap === "other" ? 0.22 : 0.8,
+        r: cap === "other" ? 1.7 : 2.6,
+        meta: p,
+      };
+    });
+    C.renderScatter("chart-capture", points, {
+      width: 760,
+      height: 460,
+      margin: { top: 16, right: 150, bottom: 50, left: 60 },
+      xType: "linear",
+      xDomain: [0, 100],
+      yDomain: [-55, 155],
+      xLabel: S.capture.xLabel,
+      yLabel: S.capture.yLabel,
+      xTickFormat: (v) => v + "%",
+      yTickFormat: (v) => v + "%",
+      hlines: [
+        { y: 100, cls: "refline-dotted" },
+        { y: 0, cls: "refline-dotted" },
+        { y: 50, cls: "refline" },
+      ],
+      legend: [
+        { color: CL.lula, label: S.capture.lulaCap },
+        { color: CL.flavio, label: S.capture.flavioCap },
+        { color: CL.muted, label: S.capture.other },
+      ],
+      tooltipFn: (pt) => {
+        const m = pt.meta, z = m.z;
+        return {
+          title: `${zoneTitle(z, S)} · #${z[ZONA]}`,
+          rows: [
+            { label: S.capture.lean, value: C.fmtPct(m.lean, 0, locale) },
+            { label: "Lula", value: (m.dL >= 0 ? "+" : "−") + C.fmtInt(Math.abs(Math.round(m.dL)), locale), color: CL.lula },
+            { label: "Flávio", value: (m.dF >= 0 ? "+" : "−") + C.fmtInt(Math.abs(Math.round(m.dF)), locale), color: CL.flavio },
+            { label: S.capture.share, value: C.fmtPct(m.share, 0, locale) },
+          ],
+        };
+      },
+    });
+  }
+
   // ---------------- Chart search boxes (Figure 3, Figure 5) ----------------
   // Wired once per chart (the input/dropdown/clear-button DOM is static,
   // server-rendered HTML that survives chart re-renders); only the scatter
@@ -2614,6 +2723,7 @@ window.CHART_DATA = JSON.parse(document.getElementById('chart-data-json').textCo
     renderStateTurnout(S, locale);
     renderVoteTransfer(S, locale);
     renderBlankNull(S, locale);
+    renderCapture(S, locale);
 
     // The charts underneath the search boxes were just torn down and
     // rebuilt (new highlight circle, new handle), so any previous
