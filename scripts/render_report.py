@@ -639,6 +639,9 @@ td.winner-cell {{ text-align: center; }}
     {B("li", f"National round-2 totals match the official TSE announcement exactly: Lula {fnum(di['national_lula_r2_votes'],'en')} votes, Flávio Bolsonaro {fnum(di['national_flavio_r2_votes'],'en')} votes.", f"Os totais nacionais do 2º turno batem exatamente com o anúncio oficial do TSE: Lula {fnum(di['national_lula_r2_votes'],'pt')} votos, Flávio Bolsonaro {fnum(di['national_flavio_r2_votes'],'pt')} votos.")}
   </ul>
 
+  {takeaway("The official data is internally consistent and adds up exactly to the published national totals. This alone does not prove the election was clean — it means the numbers analysed in the rest of this report are the genuine, unaltered official ones.", "Os dados oficiais são internamente consistentes e batem exatamente com os totais nacionais publicados. Isso, sozinho, não prova que a eleição foi limpa — significa que os números analisados no restante deste relatório são os oficiais, genuínos e sem alteração.")}
+</section>
+
 <section id="headline">
   <h2><span class="num">02</span>{B("span", "The headline result", "O resultado principal")}</h2>
   {B("p", f"Lula (PT) defeated Flávio Bolsonaro (PL) in the round-2 runoff. Round 1 was close — Flávio actually led narrowly — and Lula's share of the two-candidate vote rose by <strong>{pct(nat['swing_pts'],'en',2)} points</strong> between rounds, once the other {summary['n_round1_candidates']-2} round-1 candidates were eliminated. A later section (<a href=\"#transfers\">§7</a>) traces where that shift came from, using every eliminated candidate's own round-1 result.", f"Lula (PT) derrotou Flávio Bolsonaro (PL) no segundo turno. O primeiro turno foi disputado — Flávio, na verdade, liderou por pouco — e o percentual de Lula entre os dois candidatos subiu <strong>{pct(nat['swing_pts'],'pt',2)} pontos</strong> entre os turnos, depois que os outros {summary['n_round1_candidates']-2} candidatos do primeiro turno foram eliminados. Uma seção posterior (<a href=\"#transfers\">§7</a>) rastreia de onde veio essa variação, usando o resultado do primeiro turno de cada candidato eliminado.", cls="lede")}
@@ -660,7 +663,8 @@ td.winner-cell {{ text-align: center; }}
     {B("div", f'<div class="v">{pct(ab["r1_pct"],"en")}% → {pct(ab["r2_pct"],"en")}%</div><div class="l">Abstention, round 1 → round 2</div>', f'<div class="v">{pct(ab["r1_pct"],"pt")}% → {pct(ab["r2_pct"],"pt")}%</div><div class="l">Abstenção, 1º turno → 2º turno</div>', cls="stat-tile")}
   </div>
 
-
+  {takeaway("Lula won a close race. Round 1 was essentially tied, and the small, nationwide shift to Lula in round 2 is the shift this report sets out to explain and stress-test.", "Lula venceu uma disputa apertada. O 1º turno ficou essencialmente empatado, e a pequena variação nacional em favor de Lula no 2º turno é justamente a variação que este relatório se propõe a explicar e testar.")}
+</section>
 
 <section id="landslides">
   <h2><span class="num">03</span>{B("span", "Are 90%+ zones unusual?", "As zonas com 90%+ são incomuns?")}</h2>
@@ -670,9 +674,6 @@ td.winner-cell {{ text-align: center; }}
     <div id="chart-zone-hist" class="chart-container" style="flex:1"></div>
     {B("div", "Figure 2. The full distribution of round-2 results across every zone. Hover a bar for the exact count. High-concentration zones are the small tail beyond the markers — a tiny fraction of a broad, smooth distribution, not a separate spike.", "Figura 2. A distribuição completa dos resultados do 2º turno em todas as zonas. Passe o mouse sobre uma barra para ver a contagem exata. As zonas de alta concentração são a pequena cauda além dos marcadores — uma fração ínfima de uma distribuição ampla e suave, não um pico isolado.", cls="cap")}
   </div>
-
-  {takeaway("The official data is internally consistent and adds up exactly to the published national totals. This alone does not prove the election was clean — it means the numbers analysed in the rest of this report are the genuine, unaltered official ones.", "Os dados oficiais são internamente consistentes e batem exatamente com os totais nacionais publicados. Isso, sozinho, não prova que a eleição foi limpa — significa que os números analisados no restante deste relatório são os oficiais, genuínos e sem alteração.")}
-</section>
 
   <div class="callout method">
     {B("span", "<b>How we decide whether a result is surprising.</b> A 90% result is not surprising on its own: support for a candidate varies enormously across Brazil for real, well-documented reasons — the Northeast has long leaned heavily towards the PT, while parts of the South and the agribusiness belt lean the other way. So rather than asking whether 90% beats a coin flip (a bar nobody expects a real town to clear), we ask a fairer question in the sections that follow: is each zone's result surprising <em>given its own size and how that same zone voted in round 1</em>?", "<b>Como decidimos se um resultado é surpreendente.</b> Um resultado de 90% não é surpreendente por si só: o apoio a um candidato varia enormemente pelo Brasil por razões reais e bem documentadas — o Nordeste há muito pende fortemente para o PT, enquanto partes do Sul e do cinturão do agronegócio pendem para o outro lado. Então, em vez de perguntar se 90% supera um cara ou coroa (um patamar que ninguém espera de uma cidade real), fazemos nas seções seguintes uma pergunta mais justa: o resultado de cada zona é surpreendente <em>dado o seu próprio tamanho e como essa mesma zona votou no 1º turno</em>?")}
@@ -739,6 +740,8 @@ td.winner-cell {{ text-align: center; }}
   </div>
 
   {B("p", "In short: there is no statistical excess of 90%+ zones for either candidate that would need a fraud explanation. The frequency of 90%+ results is consistent with — if anything, lower than — ordinary sampling variance around each zone's own baseline.", "Em resumo: não há excesso estatístico de zonas com 90%+ para nenhum dos candidatos que exija uma explicação de fraude. A frequência de resultados de 90%+ é compatível com — e, se algo, inferior a — a variação amostral comum em torno da base de cada zona.")}
+
+  {takeaway("Chance alone, with no fraud, would have produced about three times as many 90%+ Lula zones as actually occurred. The real result is calmer than random noise, not wilder — the opposite of what vote-stuffing would leave behind.", "Só o acaso, sem fraude nenhuma, teria produzido cerca de três vezes mais zonas de 90%+ para Lula do que de fato ocorreu. O resultado real é mais calmo do que o ruído aleatório, não mais extremo — o oposto do que um enchimento de urnas deixaria.")}
 </section>
 
 <section id="robustness">
@@ -752,10 +755,8 @@ td.winner-cell {{ text-align: center; }}
     <thead><tr>
       <th>{B("span", "What we changed", "O que mudamos")}</th>
       <th>{B("span", "Zones", "Zonas")}</th>
-      <th>{B("span", "Actual Lula ≥ threshold", "Real Lula ≥ limiar")}</th>
-      <th>{B("span", "Chance range (mean, 90%)", "Faixa de acaso (média, 90%)")}</th>
-      <th>{B("span", "Actual Flávio ≥ threshold", "Real Flávio ≥ limiar")}</th>
-      <th>{B("span", "Chance range (mean, 90%)", "Faixa de acaso (média, 90%)")}</th>
+      <th>{B("span", "Lula — actual vs chance", "Lula — real vs acaso")}</th>
+      <th>{B("span", "Flávio — actual vs chance", "Flávio — real vs acaso")}</th>
     </tr></thead>
     {B("tbody", robustness_rows("en"), robustness_rows("pt"))}
   </table>
@@ -767,9 +768,9 @@ td.winner-cell {{ text-align: center; }}
   <div class="callout caveat">
     {B("span", f"<b>One result worth flagging rather than hiding:</b> Flávio's high-concentration zones come out slightly more often than chance predicts at the two stricter thresholds — {rb_by_key['threshold_85']['actual_flavio']} zones at 85% (chance range {fnum(rb_by_key['threshold_85']['sim_flavio_p05'],'en',0)}&ndash;{fnum(rb_by_key['threshold_85']['sim_flavio_p95'],'en',0)}) and {rb_by_key['baseline']['actual_flavio']} at 90% (chance range {fnum(rb_by_key['baseline']['sim_flavio_p05'],'en',0)}&ndash;{fnum(rb_by_key['baseline']['sim_flavio_p95'],'en',0)}). Each sits around the 98th&ndash;99th percentile of the chance model on its own — roughly a one-in-twenty result, and we have not corrected for testing several thresholds. So it is small (a handful of zones) and one-sided, and it points in the <em>opposite</em> direction to the high-Lula concentration this report set out to examine. It is not evidence of anything by itself — but because it shows up at more than one threshold rather than a single lucky cut-off, it is a specific, named result worth a second look with finer-grained (polling-section) data.", f"<b>Um resultado que vale sinalizar, não esconder:</b> as zonas de alta concentração de Flávio aparecem um pouco mais do que o acaso prevê nos dois limiares mais estritos — {rb_by_key['threshold_85']['actual_flavio']} zonas em 85% (faixa de acaso {fnum(rb_by_key['threshold_85']['sim_flavio_p05'],'pt',0)}&ndash;{fnum(rb_by_key['threshold_85']['sim_flavio_p95'],'pt',0)}) e {rb_by_key['baseline']['actual_flavio']} em 90% (faixa de acaso {fnum(rb_by_key['baseline']['sim_flavio_p05'],'pt',0)}&ndash;{fnum(rb_by_key['baseline']['sim_flavio_p95'],'pt',0)}). Cada um fica por volta do percentil 98&ndash;99 do modelo de acaso isoladamente — cerca de um resultado em vinte, e não corrigimos para o teste de vários limiares. Ou seja, é pequeno (um punhado de zonas) e unilateral, e aponta na direção <em>oposta</em> à alta concentração de Lula que este relatório se propôs a examinar. Não é evidência de nada por si só — mas, por aparecer em mais de um limiar, e não em um único corte de sorte, é um resultado específico e nomeado que mereceria um novo olhar com dados mais granulares (por seção eleitoral).")}
   </div>
-</section>
 
   {takeaway("The finding holds up under every reasonable change to the rules. One small, honest caveat: Flávio ends up with slightly more lopsided zones than chance predicts — a handful of zones, and it shows up at more than one threshold rather than once by luck. It is mild, points the opposite way to the pattern this section is scrutinising, and proves nothing on its own, but we flag it rather than hide it.", "O resultado se sustenta sob toda mudança razoável nas regras. Uma pequena ressalva honesta: Flávio acaba com um pouco mais de zonas desequilibradas do que o acaso prevê — um punhado de zonas, e isso aparece em mais de um limiar, não uma única vez por sorte. É leve, aponta na direção oposta ao padrão que esta seção examina, e não prova nada por si só, mas nós o sinalizamos em vez de escondê-lo.")}
+</section>
 
 <section id="consistency">
   <h2><span class="num">06</span>{B("span", "Were these 90%+ results sudden, or pre-existing?", "Esses resultados de 90%+ foram súbitos, ou já existiam?")}</h2>
@@ -794,9 +795,9 @@ td.winner-cell {{ text-align: center; }}
   <div class="callout ok">
     {B("span", f"<b>Every zone that reached 90%+ in round 2 had already reached that level in round 1.</b> For example, Barreirinha (AM) — the largest Lula 90%+ zone, with {fnum(top0['n_r2'],'en')} votes, — gave Lula {pct(100*top0['p_r1_twoparty'],'en')}% of the two-candidate vote in round 1 and {pct(100*top0['p_r2'],'en')}% in round 2: a {pct(100*(top0['p_r2']-top0['p_r1_twoparty']),'en',1)}-point change, in line with the national swing. This pattern holds across every 90%+ zone in the table above.", f"<b>Toda zona que atingiu 90%+ no 2º turno já havia atingido esse patamar no 1º turno.</b> Por exemplo, Barreirinha (AM) — a maior zona de 90%+ de Lula, com {fnum(top0['n_r2'],'pt')} votos, — deu a Lula {pct(100*top0['p_r1_twoparty'],'pt')}% dos votos entre os dois candidatos no 1º turno e {pct(100*top0['p_r2'],'pt')}% no 2º turno: uma variação de {pct(100*(top0['p_r2']-top0['p_r1_twoparty']),'pt',1)} pontos, em linha com a variação nacional. Esse padrão se repete em todas as zonas de 90%+ da tabela acima.")}
   </div>
-</section>
 
   {takeaway("None of the lopsided zones appeared out of nowhere. Each was already a stronghold in a completely separate vote three weeks earlier — the fingerprint of long-standing local loyalty, not of something inserted into round 2.", "Nenhuma das zonas desequilibradas surgiu do nada. Cada uma já era um reduto em uma votação totalmente separada, três semanas antes — a marca de uma lealdade local antiga, não de algo inserido no 2º turno.")}
+</section>
 
 <section id="transfers">
   <h2><span class="num">07</span>{B("span", "Where did the votes go?", "Para onde foram os votos?")}</h2>
@@ -821,9 +822,9 @@ td.winner-cell {{ text-align: center; }}
   <div class="callout caveat">
     {B("span", "<b>Why this is exploratory, not confirmatory.</b> Ecological regression famously can mislead when the underlying individual-level behaviour doesn't match the aggregate pattern (the \"ecological fallacy\") — a municipality where Lula gained ground could reflect eliminated-candidate voters switching to him, or simply different people turning out in round 2, and this method cannot fully tell those apart. The wide range on Caiado's split, and our pooling of the smaller candidates rather than reporting made-up precision for them, are the analysis being honest about that limitation, not a bug. Read this section as a plausible, data-grounded sketch of where votes likely moved — not as a precise accounting.", "<b>Por que isto é exploratório, não confirmatório.</b> A regressão ecológica pode enganar quando o comportamento individual subjacente não corresponde ao padrão agregado (a \"falácia ecológica\") — um município onde Lula ganhou terreno pode refletir eleitores de candidatos eliminados migrando para ele, ou simplesmente pessoas diferentes comparecendo no 2º turno, e este método não consegue distinguir totalmente entre essas possibilidades. A faixa larga na divisão de Caiado, e o fato de agruparmos os candidatos menores em vez de reportar uma precisão inventada para eles, são a análise sendo honesta sobre essa limitação, não um defeito. Leia esta seção como um esboço plausível e fundamentado em dados de para onde os votos provavelmente se moveram — não como uma contabilidade precisa.")}
   </div>
-</section>
 
   {takeaway("Both finalists kept almost all of their own first-round voters. Caiado's bloc was the one real toss-up and split about evenly; the remaining eliminated voters leaned Lula, matching his larger between-round gain. We only report the blocs the data can actually resolve, and show how uncertain each one is — this is a plausible sketch of how the runoff was decided, not a precise count.", "Os dois finalistas mantiveram quase todos os seus eleitores do 1º turno. O bloco de Caiado foi o único realmente disputado e se dividiu quase ao meio; os demais eleitores eliminados penderam para Lula, condizente com o seu maior ganho entre os turnos. Só reportamos os blocos que os dados conseguem de fato resolver, e mostramos o quão incerto é cada um — este é um esboço plausível de como o 2º turno foi decidido, não uma contagem precisa.")}
+</section>
 
 <section id="turnout">
   <h2><span class="num">08</span>{B("span", 'Turnout change vs. vote swing', 'Variação de comparecimento vs. variação de votos')}</h2>
@@ -840,9 +841,9 @@ td.winner-cell {{ text-align: center; }}
   <div class="callout {corr_cls}">
     {B("span", f"<b>{tip('Pearson r', 'A correlation coefficient: 0 means no linear relationship, +1 or −1 a perfect one. At 0.08 the two quantities are essentially unrelated.')} = {pct(corr['pearson_r'],'en',3)}</b> (n = {fnum(corr['n'],'en')}, p = {corr['p_value']:.1e}). The correlation is {tip('statistically significant', 'With 6,250 zones, even a trivially small pattern clears the usual significance bar. Significance here means &#39;almost certainly not exactly zero&#39; — it says nothing about whether the relationship is big enough to matter. It is not.')} purely because of the large sample size, but the effect is negligible — turnout change explains well under 1% of the variation in swing (r² = {pct(corr['pearson_r']**2*100,'en',2)}%). There is no meaningful relationship between where turnout rose and where the vote swung, which is what we'd expect from ordinary voting and not from coordinated ballot-stuffing tied to turnout.", f"<b>{tip('r de Pearson', 'Um coeficiente de correlação: 0 significa nenhuma relação linear; +1 ou −1, uma relação perfeita. Em 0,08, as duas grandezas são essencialmente não relacionadas.')} = {pct(corr['pearson_r'],'pt',3)}</b> (n = {fnum(corr['n'],'pt')}, p = {corr['p_value']:.1e}). A correlação é {tip('estatisticamente significativa', 'Com 6.250 zonas, até um padrão insignificante supera o limiar usual de significância. Significância aqui quer dizer &#39;quase certamente não é exatamente zero&#39; — não diz nada sobre o efeito ser grande o bastante para importar. E não é.')} apenas por causa do tamanho grande da amostra, mas o efeito é insignificante — a variação no comparecimento explica bem menos de 1% da variação na variação de votos (r² = {pct(corr['pearson_r']**2*100,'pt',2)}%). Não há relação relevante entre onde o comparecimento aumentou e onde o voto variou, o que é o esperado em uma votação comum, e não em uma fraude de urna coordenada e ligada ao comparecimento.")}
   </div>
-</section>
 
   {takeaway("Where more people turned out in round 2, the vote did not swing any particular way. Extra turnout was not quietly flowing to one candidate — there is simply no link between the two.", "Onde mais gente compareceu no 2º turno, o voto não variou em nenhuma direção específica. O comparecimento extra não estava fluindo silenciosamente para um candidato — simplesmente não há ligação entre as duas coisas.")}
+</section>
 
 <section id="blanknull">
   <h2><span class="num">09</span>{B("span", "Blank and spoiled votes", "Votos em branco e nulos")}</h2>
@@ -854,9 +855,9 @@ td.winner-cell {{ text-align: center; }}
   </div>
 
   {B("p", f"The combined rate varies by state in round 2, from a high in {bn_hi[0]['sg_uf']} ({pct(bn_hi[0]['r2'],'en',2)}%) and {bn_hi[1]['sg_uf']} ({pct(bn_hi[1]['r2'],'en',2)}%) down to {bn_lo[-1]['sg_uf']} ({pct(bn_lo[-1]['r2'],'en',2)}%) and {bn_lo[-2]['sg_uf']} ({pct(bn_lo[-2]['r2'],'en',2)}%) — a normal range for a country this size, and not something we ran a formal outlier test on in this pass (see the closing section).", f"A taxa combinada varia por estado no 2º turno, de um máximo em {bn_hi[0]['sg_uf']} ({pct(bn_hi[0]['r2'],'pt',2)}%) e {bn_hi[1]['sg_uf']} ({pct(bn_hi[1]['r2'],'pt',2)}%) até um mínimo em {bn_lo[-1]['sg_uf']} ({pct(bn_lo[-1]['r2'],'pt',2)}%) e {bn_lo[-2]['sg_uf']} ({pct(bn_lo[-2]['r2'],'pt',2)}%) — uma faixa normal para um país deste tamanho, e algo sobre o qual não rodamos um teste formal de valores atípicos nesta etapa (veja a seção final).")}
-</section>
 
   {takeaway("Fewer voters rejected every candidate in round 2 than in round 1 — exactly what you'd expect when the choice narrows from twelve names to two. Nothing unusual here.", "Menos eleitores rejeitaram todos os candidatos no 2º turno do que no 1º — exatamente o esperado quando a escolha passa de doze nomes para dois. Nada de incomum aqui.")}
+</section>
 
 <section id="digits">
   <h2><span class="num">10</span>{B("span", "Digit-based forensic tests", "Testes forenses baseados em dígitos")}</h2>
@@ -882,9 +883,9 @@ td.winner-cell {{ text-align: center; }}
   <div class="callout caveat">
     {B("span", '<b>Caveat.</b> Digit-based tests are a standard but limited tool. <a href="https://doi.org/10.1093/pan/mpr014" target="_blank" rel="noopener">Deckert, Myagkov &amp; Ordeshook (2011)</a> showed first-digit Benford tests are not theoretically justified for vote counts and can both miss real fraud and flag clean elections; last-digit tests (used here) are more defensible but still have limited statistical power, especially against fraud that adds vote counts in round numbers or small, carefully chosen increments rather than large uniform fabrications. Treat this section as supporting evidence only, not as a standalone verdict.', '<b>Ressalva.</b> Testes baseados em dígitos são uma ferramenta padrão, mas limitada. <a href="https://doi.org/10.1093/pan/mpr014" target="_blank" rel="noopener">Deckert, Myagkov e Ordeshook (2011)</a> mostraram que testes de primeiro dígito de Benford não têm justificativa teórica para contagens de votos e podem tanto deixar passar fraudes reais quanto sinalizar eleições limpas; testes de último dígito (usados aqui) são mais defensáveis, mas ainda têm poder estatístico limitado, especialmente contra fraudes que somam votos em números redondos ou em pequenos incrementos cuidadosamente escolhidos, em vez de grandes fabricações uniformes. Trate esta seção apenas como evidência de apoio, não como um veredito isolado.')}
   </div>
-</section>
 
   {takeaway("The digits of the vote counts look random, as they should in a genuine count. This is a weak test on its own — it agrees with the others here, but it could not catch every kind of tampering.", "Os dígitos das contagens de votos parecem aleatórios, como devem ser numa contagem genuína. É um teste fraco por si só — concorda com os demais aqui, mas não detectaria todo tipo de manipulação.")}
+</section>
 
 <section id="geography">
   <h2><span class="num">11</span>{B("span", "Does this match known political geography?", "Isso corresponde à geografia política conhecida?")}</h2>
