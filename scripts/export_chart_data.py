@@ -18,7 +18,7 @@ from common import PROCESSED_DIR, ROOT
 ANALYSIS_DIR = ROOT / "data" / "analysis"
 OUT_PATH = ANALYSIS_DIR / "chart_data.json"
 
-COLUMNS = ["uf", "mun", "zona", "abroad", "n", "p2", "p1", "dturn", "swing"]
+COLUMNS = ["uf", "mun", "zona", "abroad", "n", "p2", "p1", "dturn", "swing", "n1"]
 
 
 def round_or_none(x, nd=6):
@@ -47,6 +47,7 @@ def main() -> None:
                 round_or_none(r.p_r1_twoparty),
                 round_or_none(r.turnout_rate_delta),
                 round_or_none(r.swing_r1_to_r2),
+                int(r.n_r1),
             ]
         )
 
