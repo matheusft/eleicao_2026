@@ -22,6 +22,7 @@
       national: {
         r1Tooltip: "Round 1 share",
         r2Tooltip: "Round 2 share",
+        votes: "Total votes",
       },
       zoneHist: {
         valueLabel: "Number of electoral zones",
@@ -120,6 +121,7 @@
       national: {
         r1Tooltip: "Percentual no 1º turno",
         r2Tooltip: "Percentual no 2º turno",
+        votes: "Total de votos",
       },
       zoneHist: {
         valueLabel: "Número de zonas eleitorais",
@@ -231,23 +233,31 @@
   function renderNational(S, locale) {
     const CL = col();
     const nameColor = (name) => (name === "Lula" ? CL.lula : name === "Flavio Bolsonaro" ? CL.flavio : CL.muted);
-    const r1 = D.national.round1.map((d) => ({ key: d[0], label: d[0] === "Flavio Bolsonaro" ? "Flávio Bolsonaro" : d[0], value: d[1], color: nameColor(d[0]), valueLabel: d[1].toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%" }));
+    const r1 = D.national.round1.map((d) => ({ key: d[0], label: d[0] === "Flavio Bolsonaro" ? "Flávio Bolsonaro" : d[0], value: d[1], votes: d[2], color: nameColor(d[0]), valueLabel: d[1].toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%" }));
     C.renderBars("chart-national-r1", r1, {
       orientation: "horizontal",
-      width: 520,
-      height: 380,
+      width: 620,
+      height: 400,
+      margin: { top: 10, right: 60, bottom: 36, left: 150 },
       valueDomain: [0, Math.max(...r1.map((b) => b.value)) * 1.25],
       valueTickFormat: (v) => v.toFixed(0) + "%",
-      tooltipFn: (b) => ({ title: b.label, rows: [{ label: S.national.r1Tooltip, value: b.value.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%", color: b.color }] }),
+      tooltipFn: (b) => ({ title: b.label, rows: [
+        { label: S.national.r1Tooltip, value: b.value.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%", color: b.color },
+        { label: S.national.votes, value: C.fmtInt(b.votes, locale) },
+      ] }),
     });
-    const r2 = D.national.round2.map((d) => ({ key: d[0], label: d[0] === "Flavio Bolsonaro" ? "Flávio Bolsonaro (PL)" : "Lula (PT)", value: d[1], color: nameColor(d[0]), valueLabel: d[1].toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%" }));
+    const r2 = D.national.round2.map((d) => ({ key: d[0], label: d[0] === "Flavio Bolsonaro" ? "Flávio Bolsonaro (PL)" : "Lula (PT)", value: d[1], votes: d[2], color: nameColor(d[0]), valueLabel: d[1].toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%" }));
     C.renderBars("chart-national-r2", r2, {
       orientation: "horizontal",
-      width: 420,
-      height: 200,
+      width: 620,
+      height: 170,
+      margin: { top: 8, right: 64, bottom: 34, left: 150 },
       valueDomain: [0, 100],
       valueTickFormat: (v) => v.toFixed(0) + "%",
-      tooltipFn: (b) => ({ title: b.label, rows: [{ label: S.national.r2Tooltip, value: b.value.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%", color: b.color }] }),
+      tooltipFn: (b) => ({ title: b.label, rows: [
+        { label: S.national.r2Tooltip, value: b.value.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%", color: b.color },
+        { label: S.national.votes, value: C.fmtInt(b.votes, locale) },
+      ] }),
     });
   }
 
