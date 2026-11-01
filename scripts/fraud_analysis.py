@@ -669,6 +669,44 @@ def main() -> None:
     summary["pct_lula_ge90"] = float(100 * len(lula90) / n_total_zones)
     summary["pct_flavio_ge90"] = float(100 * len(flavio90) / n_total_zones)
 
+    # Were round-2 90%+ zones already at 90%+ in round 1? Put both
+    # candidates on the same footing (their own round-1/round-2 share of
+    # the two-candidate vote) so a handful of zones that crossed the line
+    # *between* rounds, rather than already sitting beyond it, show up
+    # explicitly instead of being papered over.
+    landslide_info = pd.concat(
+        [
+            pd.DataFrame(
+                {"r1_share": lula90["p_r1_twoparty"], "r2_share": lula90["p_r2"]}
+            ),
+            pd.DataFrame(
+                {
+                    "r1_share": 1 - flavio90["p_r1_twoparty"],
+                    "r2_share": 1 - flavio90["p_r2"],
+                }
+            ),
+        ],
+        ignore_index=True,
+    )
+    landslide_info["swing_pts"] = 100 * (
+        landslide_info["r2_share"] - landslide_info["r1_share"]
+    )
+    landslide_exceptions = landslide_info[landslide_info["r1_share"] < 0.90]
+    summary["r1_r2_consistency"] = {
+        "n_landslide_zones": int(len(landslide_info)),
+        "n_exceptions": int(len(landslide_exceptions)),
+        "exceptions_min_r1_pct": (
+            float(100 * landslide_exceptions["r1_share"].min())
+            if len(landslide_exceptions)
+            else None
+        ),
+        "exceptions_max_swing_pts": (
+            float(landslide_exceptions["swing_pts"].abs().max())
+            if len(landslide_exceptions)
+            else None
+        ),
+    }
+
     summary["n_distribution_all"] = {
         "median": float(z2["n_r2"].median()),
         "mean": float(z2["n_r2"].mean()),
