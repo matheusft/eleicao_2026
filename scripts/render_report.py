@@ -525,10 +525,15 @@ tr:hover td {{ background: var(--surface-1); }}
 .callout.ok {{ background: var(--ok-bg); color: var(--ok-text); border: 1px solid color-mix(in srgb, var(--ok-text) 25%, transparent); }}
 .callout b {{ color: inherit; }}
 
-.toc {{ display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13.5px; margin-top: 18px; }}
-.toc a {{ color: var(--text-secondary); text-decoration: none; }}
+.toc {{ display: flex; flex-direction: column; font-size: 13.5px; margin-top: 18px; max-width: 460px; }}
+.toc a {{
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 7px 2px; color: var(--text-secondary); text-decoration: none;
+  border-bottom: 1px solid var(--border);
+}}
+.toc a:first-child {{ border-top: 1px solid var(--border); }}
 .toc a:hover {{ color: var(--accent); }}
-.toc span.n {{ font-family: var(--mono); color: var(--accent); margin-right: 4px; }}
+.toc span.n {{ flex: none; width: 20px; font-family: var(--mono); color: var(--accent); }}
 
 footer {{ padding: 40px 0 80px; color: var(--text-muted); font-size: 13px; }}
 footer a {{ color: var(--text-muted); }}
