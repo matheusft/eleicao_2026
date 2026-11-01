@@ -596,6 +596,14 @@ td.winner-cell {{ text-align: center; }}
 }}
 .robustness-table td:first-child {{ white-space: normal; }}
 
+/* Findings table: wrap the Analysis and Note columns (their text is the
+   whole point) so the table fits the page width instead of needing
+   horizontal scrolling; only the short Classification pill stays nowrap. */
+.findings-table th, .findings-table td {{ white-space: normal; }}
+.findings-table th:nth-child(1), .findings-table td:nth-child(1) {{ width: 22%; }}
+.findings-table th:nth-child(2), .findings-table td:nth-child(2) {{ width: 16%; white-space: nowrap; }}
+.findings-table th:nth-child(3), .findings-table td:nth-child(3) {{ width: 62%; }}
+
 /* Small inline legend swatch used under exhibits (e.g. Monte Carlo keys). */
 .mini-legend {{ display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--text-muted); margin: 2px 0 0; }}
 .mini-legend .mi {{ display: inline-flex; align-items: center; gap: 6px; }}
