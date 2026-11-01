@@ -59,6 +59,23 @@ def B(tag: str, en: str, pt: str, cls: str = "", attrs: str = "") -> str:
     )
 
 
+def tip(term: str, text: str) -> str:
+    """Inline term with a styled, tap-and-hover-and-keyboard tooltip.
+    `tabindex` makes it reachable on touch devices (a tap focuses it) and by
+    keyboard, so the explanation is not hover-only."""
+    return (
+        f'<span class="has-tip" tabindex="0" role="note">{term}'
+        f'<span class="tip-pop">{text}</span></span>'
+    )
+
+
+def takeaway(en: str, pt: str) -> str:
+    """Plain-English 'what this means' box placed at the end of a section."""
+    label = B("span", "In plain terms", "Em termos simples", cls="takeaway-label")
+    body = B("span", en, pt, cls="takeaway-body")
+    return f'<div class="takeaway">{label}{body}</div>'
+
+
 def muni_label(r: dict, lang: str) -> str:
     if not r.get("is_abroad"):
         tag = ""
@@ -492,6 +509,8 @@ code {{ font-family: var(--mono); background: var(--surface-1); padding: 1px 5px
   </div>
 </div>
 
+.chart-svg .ci-whisker {{ stroke-width: 1.6; opacity: 0.9; }}
+.chart-svg .ci-point {{ opacity: 1; }}
 <header class="masthead">
   <div class="wrap">
     <div class="kicker">{B("span", "Statistical forensics · Brazil 2026 Presidential Election", "Perícia estatística · Eleição Presidencial do Brasil 2026")}</div>
@@ -509,6 +528,63 @@ code {{ font-family: var(--mono); background: var(--surface-1); padding: 1px 5px
       <a href="#robustness"><span class="n">05</span>{B("span", "Does this hold up?", "Isso se sustenta?")}</a>
       <a href="#consistency"><span class="n">06</span>{B("span", "Sudden, or pre-existing?", "Súbito, ou pré-existente?")}</a>
       <a href="#transfers"><span class="n">07</span>{B("span", "Where did the votes go?", "Para onde foram os votos?")}</a>
+
+/* --- inline term tooltips (assumptions / definitions) --- */
+.has-tip {{
+  border-bottom: 1px dotted var(--accent); cursor: help; position: relative;
+  outline: none;
+}}
+.has-tip > .tip-pop {{
+  display: none; position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 600;
+  width: max-content; max-width: min(300px, 80vw);
+  background: var(--surface-card); color: var(--text-secondary);
+  border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.20);
+  padding: 10px 13px; font-size: 13px; font-weight: 400; line-height: 1.5;
+  text-transform: none; letter-spacing: normal; white-space: normal;
+}}
+.has-tip:hover > .tip-pop, .has-tip:focus > .tip-pop, .has-tip:focus-within > .tip-pop {{ display: block; }}
+@media (max-width: 560px) {{ .has-tip > .tip-pop {{ left: auto; right: 0; max-width: 78vw; }} }}
+
+/* --- per-section plain-English takeaway --- */
+.takeaway {{
+  display: flex; gap: 14px; align-items: flex-start;
+  background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  border-radius: 10px; padding: 16px 20px; margin: 26px 0 4px;
+}}
+.takeaway-label {{
+  flex: none; font-family: var(--mono); font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent);
+  padding-top: 2px;
+}}
+.takeaway-body {{ font-size: 15px; color: var(--text-primary); }}
+@media (max-width: 560px) {{ .takeaway {{ flex-direction: column; gap: 6px; }} }}
+
+/* --- chart panel sub-heading (names which candidate a panel shows) --- */
+.chart-subtitle {{
+  text-align: center; font-family: var(--sans); font-size: 13.5px; font-weight: 600;
+  color: var(--text-secondary); margin: 2px 0 2px;
+}}
+
+/* Winner column: centre the result pill instead of left-aligning the name. */
+td.winner-cell {{ text-align: center; }}
+.landslide-table th:last-child {{ text-align: center; }}
+
+/* Robustness table: compact 4-column layout, chance range stacked under the
+   actual count so the table never needs horizontal scrolling. */
+.robustness-table th {{ white-space: normal; }}
+.robustness-table td.rob-cell {{ white-space: normal; vertical-align: top; }}
+.robustness-table td.rob-cell .chance {{
+  display: block; font-family: var(--sans); font-weight: 400;
+  color: var(--text-muted); font-size: 11px; margin-top: 2px;
+}}
+.robustness-table td:first-child {{ white-space: normal; }}
+
+/* Small inline legend swatch used under exhibits (e.g. Monte Carlo keys). */
+.mini-legend {{ display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--text-muted); margin: 2px 0 0; }}
+.mini-legend .mi {{ display: inline-flex; align-items: center; gap: 6px; }}
+.mini-legend .sw {{ width: 22px; height: 0; border-top-width: 2px; border-top-style: solid; display: inline-block; }}
+.mini-legend .sw.band {{ height: 11px; border: none; border-radius: 2px; }}
       <a href="#turnout"><span class="n">08</span>{B("span", "Turnout &amp; swing check", "Comparecimento e variação de votos")}</a>
       <a href="#blanknull"><span class="n">09</span>{B("span", "Blank &amp; spoiled votes", "Votos em branco e nulos")}</a>
       <a href="#digits"><span class="n">10</span>{B("span", "Digit tests", "Testes de dígitos")}</a>
