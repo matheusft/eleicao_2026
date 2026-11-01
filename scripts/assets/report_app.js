@@ -389,7 +389,6 @@
       xTickFormat: (v) => v + "%",
       yTickFormat: (v) => v + "%",
       diagonal: true,
-      legend: [{ color: CL.accent, label: S.funnel.legendLandslide }],
       tooltipFn: (p) => {
         const z = p.meta;
         return {
