@@ -652,6 +652,23 @@
       // Outline the full [0,1] track so the "unaccounted for" gap at the
       // end of a short bar is legible as empty space, not a rendering gap.
       g.appendChild(el("rect", { x: 0, y: y0, width: innerW, height: barH, class: "track-outline", fill: "none" }));
+
+      // 90% confidence-interval whisker on the estimated share to Lula (the
+      // boundary between the two segments). Drawn on top so the reader sees
+      // the uncertainty directly on the chart, not only in the tooltip. A
+      // wide whisker = an estimate not to be trusted precisely.
+      if (r.ci) {
+        const yc = y0 + barH / 2;
+        const xlo = xScale(r.ci.lo),
+          xhi = xScale(r.ci.hi),
+          xp = xScale(r.ci.point);
+        const cap = Math.min(barH / 2, 6);
+        const wc = r.ci.color || cssVar("--text-primary");
+        g.appendChild(el("line", { x1: xlo, x2: xhi, y1: yc, y2: yc, class: "ci-whisker", stroke: wc }));
+        g.appendChild(el("line", { x1: xlo, x2: xlo, y1: yc - cap, y2: yc + cap, class: "ci-whisker", stroke: wc }));
+        g.appendChild(el("line", { x1: xhi, x2: xhi, y1: yc - cap, y2: yc + cap, class: "ci-whisker", stroke: wc }));
+        g.appendChild(el("circle", { cx: xp, cy: yc, r: 3, class: "ci-point", fill: wc, stroke: cssVar("--surface-card"), "stroke-width": 1 }));
+      }
     });
 
     if (opts.legend) {
