@@ -95,6 +95,7 @@ def main() -> None:
     mc = summary["monte_carlo"]
     corr = summary["swing_turnout_correlation"]
     nat = summary["national_two_party_share"]
+    ab = summary["national_abstention"]
     dt_lula = summary["last_digit_test_lula_r2"]
     dt_flavio = summary["last_digit_test_flavio_r2"]
     dt_muni = summary["last_digit_test_muni_valid_votes"]
@@ -611,21 +612,23 @@ td.winner-cell {{ text-align: center; }}
 
 <section id="headline">
   <h2><span class="num">02</span>{B("span", "The headline result", "O resultado principal")}</h2>
-  {B("p", f"Lula (PT) defeated Flávio Bolsonaro (PL) in the round-2 runoff. Round 1 was close — Flávio actually led narrowly — and Lula's share of the two-candidate vote rose by <strong>{pct(nat['swing_pts'],'en',2)} points</strong> between rounds, once the other {summary['n_round1_candidates']-2} round-1 candidates were eliminated. A later section (§7) traces where that shift came from, using every eliminated candidate's own round-1.", f"Lula (PT) derrotou Flávio Bolsonaro (PL) no segundo turno. O primeiro turno foi disputado — Flávio, na verdade, liderou por pouco — e o percentual de Lula entre os dois candidatos subiu <strong>{pct(nat['swing_pts'],'pt',2)} pontos</strong> entre os turnos, depois que os outros {summary['n_round1_candidates']-2} candidatos do primeiro turno foram eliminados. Uma seção posterior (§7) rastreia de onde veio essa variação, usando o resultado do primeiro turno de cada candidato eliminado.", cls="lede")}
+  {B("p", f"Lula (PT) defeated Flávio Bolsonaro (PL) in the round-2 runoff. Round 1 was close — Flávio actually led narrowly — and Lula's share of the two-candidate vote rose by <strong>{pct(nat['swing_pts'],'en',2)} points</strong> between rounds, once the other {summary['n_round1_candidates']-2} round-1 candidates were eliminated. A later section (<a href=\"#transfers\">§7</a>) traces where that shift came from, using every eliminated candidate's own round-1 result.", f"Lula (PT) derrotou Flávio Bolsonaro (PL) no segundo turno. O primeiro turno foi disputado — Flávio, na verdade, liderou por pouco — e o percentual de Lula entre os dois candidatos subiu <strong>{pct(nat['swing_pts'],'pt',2)} pontos</strong> entre os turnos, depois que os outros {summary['n_round1_candidates']-2} candidatos do primeiro turno foram eliminados. Uma seção posterior (<a href=\"#transfers\">§7</a>) rastreia de onde veio essa variação, usando o resultado do primeiro turno de cada candidato eliminado.", cls="lede")}
 
   <div class="exhibit">
-    <div class="chart-row">
-      <div id="chart-national-r1" class="chart-container" style="flex:1.3"></div>
-      <div id="chart-national-r2" class="chart-container" style="flex:1"></div>
+    <div style="max-width:620px;margin:0 auto">
+      {B("div", f"Round 1 — all {summary['n_round1_candidates']} candidates", f"1º turno — todos os {summary['n_round1_candidates']} candidatos", cls="chart-subtitle")}
+      <div id="chart-national-r1" class="chart-container"></div>
+      {B("div", "Round 2 — the official runoff", "2º turno — o resultado oficial", cls="chart-subtitle", attrs='style="margin-top:18px"')}
+      <div id="chart-national-r2" class="chart-container"></div>
     </div>
-    {B("div", f"Figure 1. Round-1 result (all {summary['n_round1_candidates']} candidates) and the official round-2 result. Hover any bar for the exact share. Flávio led round 1 by 1.8 points; Lula's two-candidate share in round 1 was {pct(nat['lula_r1_twoparty_pct'],'en')}%, rising to {pct(nat['lula_r2_pct'],'en')}% in round 2.", f"Figura 1. Resultado do 1º turno (todos os {summary['n_round1_candidates']} candidatos) e o resultado oficial do 2º turno. Passe o mouse sobre qualquer barra para ver o percentual exato. Flávio liderou o 1º turno por 1,8 ponto; o percentual de Lula frente a Flávio no 1º turno era de {pct(nat['lula_r1_twoparty_pct'],'pt')}%, subindo para {pct(nat['lula_r2_pct'],'pt')}% no 2º turno.", cls="cap")}
+    {B("div", f"Figure 1. Round-1 result (all {summary['n_round1_candidates']} candidates, as a share of all valid votes) and the official round-2 result. Hover or tap any bar for the exact share and the raw number of votes behind it. Flávio led round 1. To compare the two rounds fairly we use the {tip('two-candidate share', f'Lula&#39;s votes divided by (Lula + Flávio) votes only, setting the other {summary['n_round1_candidates']-2} candidates aside. Round 2 is a straight Lula-vs-Flávio contest, so this is the like-for-like baseline for it.')}: on that basis Lula had {pct(nat['lula_r1_twoparty_pct'],'en')}% in round 1, rising to {pct(nat['lula_r2_pct'],'en')}% in round 2.", f"Figura 1. Resultado do 1º turno (todos os {summary['n_round1_candidates']} candidatos, como percentual dos votos válidos) e o resultado oficial do 2º turno. Passe o mouse ou toque em qualquer barra para ver o percentual exato e o número de votos por trás dele. Flávio liderou o 1º turno. Para comparar os dois turnos de forma justa, usamos o {tip('percentual entre os dois finalistas', 'Os votos de Lula divididos apenas por (Lula + Flávio), deixando os demais candidatos de fora. O 2º turno é uma disputa direta Lula × Flávio, então essa é a base comparável para ele.')}: nessa base, Lula tinha {pct(nat['lula_r1_twoparty_pct'],'pt')}% no 1º turno, subindo para {pct(nat['lula_r2_pct'],'pt')}% no 2º turno.", cls="cap")}
   </div>
 
   <div class="stat-grid">
-    {B("div", f'<div class="v lula">{pct(nat["lula_r2_pct"],"en")}%</div><div class="l">Lula, round 2 (official: 51.79%)</div>', f'<div class="v lula">{pct(nat["lula_r2_pct"],"pt")}%</div><div class="l">Lula, 2º turno (oficial: 51,79%)</div>', cls="stat-tile")}
-    {B("div", f'<div class="v flavio">{pct(nat["flavio_r2_pct"],"en")}%</div><div class="l">Flávio Bolsonaro, round 2 (official: 48.21%)</div>', f'<div class="v flavio">{pct(nat["flavio_r2_pct"],"pt")}%</div><div class="l">Flávio Bolsonaro, 2º turno (oficial: 48,21%)</div>', cls="stat-tile")}
+    {B("div", f'<div class="v lula">{pct(nat["lula_r2_pct"],"en")}%</div><div class="l">Lula, round-2 vote share</div>', f'<div class="v lula">{pct(nat["lula_r2_pct"],"pt")}%</div><div class="l">Lula, percentual no 2º turno</div>', cls="stat-tile")}
+    {B("div", f'<div class="v flavio">{pct(nat["flavio_r2_pct"],"en")}%</div><div class="l">Flávio Bolsonaro, round-2 vote share</div>', f'<div class="v flavio">{pct(nat["flavio_r2_pct"],"pt")}%</div><div class="l">Flávio Bolsonaro, percentual no 2º turno</div>', cls="stat-tile")}
     {B("div", f'<div class="v">+{pct(nat["swing_pts"],"en",2)}pt</div><div class="l">National two-party swing to Lula</div>', f'<div class="v">+{pct(nat["swing_pts"],"pt",2)}pt</div><div class="l">Variação nacional para Lula (dois candidatos)</div>', cls="stat-tile")}
-    {B("div", '<div class="v">21.08% → 19.22%</div><div class="l">Abstention, round 1 → round 2</div>', '<div class="v">21,08% → 19,22%</div><div class="l">Abstenção, 1º turno → 2º turno</div>', cls="stat-tile")}
+    {B("div", f'<div class="v">{pct(ab["r1_pct"],"en")}% → {pct(ab["r2_pct"],"en")}%</div><div class="l">Abstention, round 1 → round 2</div>', f'<div class="v">{pct(ab["r1_pct"],"pt")}% → {pct(ab["r2_pct"],"pt")}%</div><div class="l">Abstenção, 1º turno → 2º turno</div>', cls="stat-tile")}
   </div>
 
 
