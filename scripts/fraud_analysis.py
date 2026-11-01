@@ -722,6 +722,17 @@ def main() -> None:
         "flavio_r2_pct": float(100 * (1 - national_r2)),
         "swing_pts": float(100 * (national_r2 - national_r1_twoparty)),
     }
+    # National abstention rate by round (electorate-weighted), so the report
+    # can cite it from data instead of hard-coding it.
+    nat_abst = turnout.groupby("nr_turno")[["qt_aptos", "qt_abstencoes"]].sum()
+    summary["national_abstention"] = {
+        "r1_pct": float(
+            100 * nat_abst.loc[1, "qt_abstencoes"] / nat_abst.loc[1, "qt_aptos"]
+        ),
+        "r2_pct": float(
+            100 * nat_abst.loc[2, "qt_abstencoes"] / nat_abst.loc[2, "qt_aptos"]
+        ),
+    }
     summary["n_distinct_municipalities"] = int(
         z.groupby(["sg_uf", "cd_municipio"]).ngroups
     )
