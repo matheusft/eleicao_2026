@@ -31,7 +31,7 @@ from common import ROOT
 
 ANALYSIS_DIR = ROOT / "data" / "analysis"
 ASSETS_DIR = Path(__file__).resolve().parent / "assets"
-OUT_PATH = ROOT / "report" / "2026_election_forensics_report.html"
+OUT_PATH = ROOT / "report" / "index.html"
 
 
 def read_asset(name: str) -> str:
